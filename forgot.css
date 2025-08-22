@@ -1,0 +1,115 @@
+/* Body */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #5563DE, #88a0f0);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Container */
+.forgot-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Forgot Box */
+.forgot-box {
+  background: #f9f9fc;
+  padding: 40px 30px;
+  border-radius: 20px;
+  box-shadow: 
+    8px 8px 20px rgba(0,0,0,0.15),
+    -8px -8px 20px rgba(255,255,255,0.7),
+    inset 2px 2px 5px rgba(0,0,0,0.1),
+    inset -2px -2px 5px rgba(255,255,255,0.7);
+  width: 350px;
+  text-align: center;
+  animation: fadeSlideIn 0.8s forwards;
+}
+
+/* Logo */
+.forgot-box .logo {
+  width: 80px;
+  margin-bottom: 20px;
+}
+
+/* Titles and Text */
+.forgot-box h2 {
+  color: #1e3a8a;
+  margin-bottom: 10px;
+}
+
+.forgot-box p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* Input */
+.forgot-box input[type="email"] {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #f0f0f3;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1), inset -2px -2px 5px rgba(255,255,255,0.7);
+  outline: none;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.forgot-box input[type="email"]:focus {
+  border-color: #0836b7;
+  background: #e0e0e3;
+}
+
+/* Button */
+.forgot-box button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #5563DE;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(255,255,255,0.5);
+}
+
+.forgot-box button:hover {
+  background: #3742c8;
+  transform: scale(1.03);
+}
+
+/* Back to login link */
+.back-login {
+  display: block;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #5563DE;
+  text-decoration: none;
+}
+
+.back-login:hover {
+  text-decoration: underline;
+}
+
+/* Animation */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

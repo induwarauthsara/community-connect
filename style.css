@@ -1,0 +1,333 @@
+/* General */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #e0e0e3;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Left Frame */
+.left-frame {
+  flex: 0.5;
+  background: #f0f0f3;
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.1), inset -3px -3px 6px rgba(255,255,255,0.7);
+}
+
+.left-frame h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #1e3a8a;
+}
+
+/* Auth Box */
+.auth-box {
+  background: #f9f9fc;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 
+    inset 3px 3px 8px rgba(0,0,0,0.2), 
+    inset -3px -3px 8px rgba(255,255,255,0.8),
+    5px 5px 15px rgba(0,0,0,0.1);
+}
+
+.auth-box h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-weight: 700;
+  color: #1e3a8a;
+}/* Initial state for login box */
+.auth-box {
+  opacity: 0;
+  transform: translateY(50px);
+  animation: fadeSlideInLogin 0.8s forwards;
+  animation-delay: 0.3s; /* optional delay */
+}
+
+/* Keyframes for login box */
+@keyframes fadeSlideInLogin {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Input Fields */
+.input-field {
+  margin-bottom: 20px;
+}
+
+.input-field label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.input-field input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f0f0f3;
+  font-size: 15px;
+  outline: none;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1), inset -2px -2px 5px rgba(255,255,255,0.7);
+  transition: all 0.3s ease;
+}
+
+.input-field input:focus {
+  border-color: #0836b7;
+  box-shadow: inset 2px 2px 6px rgba(0,0,0,0.25), inset -2px -2px 6px rgba(255,255,255,0.8);
+  background: #e0e0e3;
+}
+
+/* Buttons */
+button {
+  width: 100%;
+  padding: 14px 0;
+  background: #2d7ade;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(255,255,255,0.5), 3px 3px 10px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: #285a71;
+  transform: scale(1.03);
+}
+
+button:active {
+  box-shadow: inset 1px 1px 4px rgba(0,0,0,0.4);
+  background: #1e3a8a;
+}
+
+/* Auth Links */
+.auth-links {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.auth-links a {
+  color: #2d7ade;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+/* Right Frame */
+.right-frame {
+  flex: 0.5;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Monitor Frame for slideshow */
+.monitor-frame {
+  width: 90%;
+  height: 80%;
+  margin: auto;
+  margin-top: 20px;
+  background: #e0e0e3;
+  border-radius: 20px;
+  box-shadow: 8px 8px 20px rgba(0,0,0,0.25), -8px -8px 20px rgba(255,255,255,0.7);
+  border: 5px solid #cbd5e1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Slideshow container */
+.slideshow-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.monitor-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 50px;
+  height: 6px;
+  background: #999;
+  border-radius: 3px;
+  box-shadow: 60px 0 0 #999, 120px 0 0 #999;
+}
+
+.slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.slide.active {
+  opacity: 1;
+}
+
+.dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  background: #bbb;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.dot.active {
+  background: white;
+}
+
+/* Welcome Panel inside right frame - CENTERED */
+.welcome-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(210, 212, 224, 0.8);
+  color:black;
+  padding: 25px 20px;
+  border-radius: 12px;
+  max-width: 250px;
+  text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  z-index: 10;
+}
+
+.welcome-panel h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.welcome-panel p {
+  font-size: 14px;
+  margin: 10px 0 12px 0;
+}
+
+.welcome-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.welcome-panel ul li {
+  margin-bottom: 8px;
+  position: relative;
+  padding-left: 20px;
+}
+
+.welcome-panel ul li::before {
+  content: "✔️";
+  position: absolute;
+  left: 0;
+}
+
+/* Forgot Password Box */
+.forgot-box {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    text-align: center;
+    width: 350px;
+}
+
+.forgot-box h2 {
+    margin-bottom: 10px;
+}
+
+.forgot-box p {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.forgot-box input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.forgot-box button {
+    width: 100%;
+    padding: 12px;
+    background: #5563DE;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.forgot-box button:hover {
+    background: #3742c8;
+}
+
+.back-login {
+    display: block;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #5563DE;
+    text-decoration: none;
+}
+
+.back-login:hover {
+    text-decoration: underline;
+}
+
+/* Phone input group */
+.phone-group {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.phone-group select {
+  width: 35%;
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+  padding: 12px;
+  font-size: 14px;
+}
+
+.phone-group input[type="tel"] {
+  width: 65%;
+  border-radius: 0 8px 8px 0;
+  border-left: none;
+  padding: 12px;
+  font-size: 14px;
+}

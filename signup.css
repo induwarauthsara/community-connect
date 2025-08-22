@@ -1,0 +1,138 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #5563DE, #3742c8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.signup-container {
+  width: 380px;
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.logo img {
+  width: 90px;
+  margin-bottom: 15px;
+}
+
+/* Initial state */
+.signup-box {
+  opacity: 0;
+  transform: translateY(50px);
+  animation: fadeSlideIn 0.8s forwards;
+  animation-delay: 0.3s; /* optional delay */
+}
+
+/* Keyframes */
+@keyframes fadeSlideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Floating input labels */
+.input-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+.input-group label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  pointer-events: none;
+  transition: 0.2s ease all;
+}
+
+.input-group input:focus + label,
+.input-group input:not(:placeholder-shown) + label {
+  top: -8px;
+  left: 10px;
+  font-size: 12px;
+  color: #5563DE;
+  background: #fff;
+  padding: 0 4px;
+}
+
+/* Password toggle */
+.toggle-pass {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  cursor: pointer;
+  color: #1729cd;
+}
+
+/* Terms */
+.terms {
+  text-align: left;
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+.terms a {
+  color: #1a268b;
+  text-decoration: none;
+}
+
+.terms a:hover {
+  text-decoration: underline;
+}
+
+/* Button */
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #5563DE;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #3742c8;
+}
+
+/* Footer link */
+.signup-box p {
+  margin-top: 15px;
+  font-size: 13px;
+}
+
+.signup-box a {
+  color: #114261;
+  text-decoration: none;
+}
+
+.signup-box a:hover {
+  text-decoration: underline;
+}
+body.signup-page {
+  background: url('https://cdn.pixabay.com/photo/2018/07/09/21/02/integration-3527263_1280.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
