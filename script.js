@@ -9,6 +9,12 @@ window.addEventListener('load', () => {
   }, 4000); // disappears after 4 seconds
 });
 
+  function closeWelcomePanel() {
+    document.getElementById("welcomePanel").style.display = "none";
+  }
+
+
+
 // create dots dynamically
 slides.forEach((_, i) => {
   let dot = document.createElement("span");
