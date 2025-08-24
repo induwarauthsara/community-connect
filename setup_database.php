@@ -47,7 +47,7 @@ function databaseExists($host, $username, $password, $database) {
 }
 
 // SQL statements for creating tables
-$tables = [
+$tables = [];
     // Organizations table
     'organizations' => "
         CREATE TABLE IF NOT EXISTS organizations (
