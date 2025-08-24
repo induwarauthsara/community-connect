@@ -4,11 +4,19 @@
 
 Keep this project as a minimal viable product so it's easy to build and explain in a viva. Only implement what is listed below—nothing extra.
 
-- Build only the basics: register, login, simple dashboards, create project, approve project, browse/join project.
-- Use only PHP, MySQL (MySQLi procedural), HTML, CSS, and a tiny bit of vanilla JS for confirmation dialogs.
-- No advanced features: no emails, no images/avatars, no notifications, no AJAX/fetch, no modals beyond browser confirm().
-- Simple UI in blue/white with basic forms and tables.
-- Use the provided helper functions in `config/database.php` and the existing pages in the repo.
+### Code Organization & Quality Rules
+- **Minimal & Readable**: Every file should be minimal, simple, readable, short, and powerful
+- **No Code Repetition**: Don't repeat the same code again - use shared components in `includes/` folder
+- **Shared Components**: Commonly used code should be organized in one folder (`includes/`) with descriptive names
+- **Direct Processing**: All form processing happens directly in the same PHP file, no separate endpoint files
+- **No External Dependencies**: Pure HTML/CSS/JS/PHP only
+
+### Technology Constraints  
+- Build only the basics: register, login, simple dashboards, create project, approve project, browse/join project
+- Use only PHP, MySQL (MySQLi procedural), HTML, CSS, and a tiny bit of vanilla JS for confirmation dialogs
+- No advanced features: no emails, no images/avatars, no notifications, no AJAX/fetch, no modals beyond browser confirm()
+- Simple UI in blue/white with basic forms and tables
+- Use the provided helper functions in `config/database.php` and existing shared components in `includes/`
 
 ## Project Parts and Branch Policy
 
@@ -26,15 +34,19 @@ You are currently on the `functionalities` branch. In this branch:
 - Keep the following setup/test files for convenience, but do NOT modify them in this branch: `README.md`, `setup_database.php`, `test_database.php`.
 
 Expected files to remain in this branch (Functionalities only):
-- `config/database.php`
-- `api/submit_project.php`
-- `organization_dashboard.php`
-- `browse_projects.php`
-- `volunteer_dashboard.php`
+- `config/database.php` - Core database functions and security helpers
+- `includes/` - Shared components and utilities (header, footer, common functions)
+  - `includes/header.php` - Shared HTML header with consistent styling
+  - `includes/footer.php` - Shared footer with confirmation JavaScript functions
+  - `includes/common.php` - Any other reusable code components
+- `organization_dashboard.php` - Organization profile and project management
+- `browse_projects.php` - Project browsing and joining functionality  
+- `volunteer_dashboard.php` - Volunteer profile and project viewing
 - `.github/copilot-instructions.md` (this file)
+
 Additionally keep (read-only, not modified here):
 - `README.md`
-- `setup_database.php`
+- `setup_database.php` 
 - `test_database.php`
 
 ## Project Specifications
@@ -83,13 +95,18 @@ This is a **PHP/MySQL volunteer coordination platform** with a three-tier role-b
 **Key Architectural Principle**: Single organization membership per volunteer, with admin-mediated project approval workflow for guest submissions.
 
 ### Pages in this repository (use these, no new pages required for MVP)
- Login/Home/Admin/Help pages are handled in their own branches and are not part of this branch.
-- `organization_dashboard.php`: Org creates and views projects
-- `volunteer_dashboard.php`: Volunteer landing with link to browse
-- `browse_projects.php`: List approved projects; allow volunteer to join
-- `api/submit_project.php`: Simple endpoint for project submissions (can be used by org page)
+Login/Home/Admin/Help pages are handled in their own branches and are not part of this branch.
+- `organization_dashboard.php`: Organization profile management and project CRUD operations
+- `volunteer_dashboard.php`: Volunteer profile management with link to browse projects  
+- `browse_projects.php`: List approved projects and allow volunteers to join them
 - `config/database.php`: All MySQLi helper functions and security helpers
-  - `README.md`, `setup_database.php`, `test_database.php`: may remain for setup/testing reference; do not modify in this branch
+- `includes/`: Shared code components and utilities
+  - `includes/header.php`: Common HTML header with blue/white styling
+  - `includes/footer.php`: Common footer with JavaScript confirmation functions
+  - `includes/common.php`: Any other reusable functions or components
+  
+Preserved files (do not modify in this branch):
+- `README.md`, `setup_database.php`, `test_database.php`: Setup/testing reference only
 
 ## Database Architecture
 
@@ -123,8 +140,11 @@ $project_id = insertRecord(
 - Do keep forms and tables minimal and readable
 - Do use browser `confirm()` for all create/update/delete confirmations
 - Do sanitize inputs and validate email
+- Do organize common code in `includes/` folder to avoid repetition
+- Do make every file minimal, simple, readable, short, and powerful
 - Don't add extra pages or features not in MVP scope
-- Don't use AJAX, or email
+- Don't use external libraries, frameworks, or separate routing systems
+- Don't repeat the same code - use shared components instead
 
 ## Functionalities to implement in this branch
 
@@ -148,6 +168,8 @@ Focus only on the following functional flows and keep them very simple:
 - Use `config/database.php` helpers (MySQLi procedural only)
 - Use session/role checks where applicable
 - Sanitize inputs and hash passwords if any auth-related helpers are touched
+- Organize reusable code in `includes/` folder (header, footer, common functions)
+- Keep all files minimal, readable, and avoid code repetition
 
 Out of scope for this branch:
 - Login/Register screens, Home page, Admin approval UI, Help page. Setup/Test files (`README.md`, `setup_database.php`, `test_database.php`) are allowed to remain but must not be modified in this branch.
@@ -217,9 +239,16 @@ if (hasRole('volunteer')) { /* volunteer-specific logic */ }
 
 ```
 ├── config/database.php      # All DB functions, security, session management
+├── includes/                # Shared components folder (NO separate endpoints)
+│   ├── header.php          # Common HTML header with blue/white styling
+│   ├── footer.php          # Common footer with JavaScript confirmation functions  
+│   └── common.php          # Other reusable functions and utilities
+├── organization_dashboard.php  # Organization profile and project CRUD
+├── volunteer_dashboard.php    # Volunteer profile and project viewing
+├── browse_projects.php       # Project browsing and joining functionality
 ├── setup_database.php       # One-time DB initialization (creates DB, tables, default admin)
 ├── test_database.php        # DB verification tool with visual feedback
-└── DATABASE_SETUP.md        # Setup documentation
+└── README.md               # Setup documentation
 ```
 
 ## Development Guidelines
@@ -232,8 +261,11 @@ if (hasRole('volunteer')) { /* volunteer-specific logic */ }
 5. **Implement confirmation dialogs**: Use JavaScript confirm() or custom modal before any CUD operation
 6. **Backend confirmation check**: Verify `$_POST['confirmed'] === 'true'` before database execution
 7. **Blue/White theme**: Maintain consistent color scheme across all pages
- 8. **No external dependencies**: Pure HTML/CSS/JS/PHP only
- 9. **Stay MVP**: No emails, no uploads, no images, no search/pagination, no notifications, no AJAX
+8. **No external dependencies**: Pure HTML/CSS/JS/PHP only
+9. **Stay MVP**: No emails, no uploads, no images, no search/pagination, no notifications, no separate endpoints/routes
+10. **Direct processing**: All form processing happens directly in the same PHP file, no separate endpoint files
+11. **Shared components**: Use `includes/` folder for common code to avoid repetition
+12. **Minimal files**: Keep every file minimal, simple, readable, short, and powerful
 
 ### Confirmation Implementation Examples
 ```html
