@@ -5,13 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Community Connect</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .left-frame {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: #ffffff;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    }
+    .left-frame h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .logo img {
+      width: 90px;
+      border-radius: 50%;
+    }
+    .auth-box {
+      max-width: 350px;
+      margin: 0 auto;
+      padding: 25px;
+      background: #fdfdfd;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    .auth-box h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #34495e;
+    }
+    .input-field {
+      margin-bottom: 15px;
+    }
+    .input-field label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #555;
+    }
+    .input-field input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      outline: none;
+      transition: border 0.3s;
+    }
+    .input-field input:focus {
+      border: 1px solid #2980b9;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #2980b9;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #1f6390;
+    }
+    .auth-links {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .auth-links a {
+      text-decoration: none;
+      color: #2980b9;
+      font-size: 14px;
+      margin: 0 5px;
+    }
+
+    /* Right Frame */
+    .right-frame {
+      flex: 1.5;
+      background: #ecf0f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    /* Keep welcome panel position same as before */
+    .welcome-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 300px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      cursor: pointer;
+      font-size: 20px;
+      color: #444;
+    }
+  </style>
 </head>
 <body>  
 
   <div class="container">
     <!-- Left Frame -->
     <div class="left-frame">
-      <h1><u>Community Connect</u></h1>
+      <div class="logo">
+        <img src="image/logo.png" alt="Community Connect Logo">
+      </div>
       <div class="auth-box">
         <h2>Login</h2>
         <form action="login.php" method="POST" onsubmit="return validateLoginForm(this)">
@@ -32,6 +153,7 @@
       </div>
     </div>
     
+    <!-- Welcome Panel (Position unchanged) -->
     <div class="welcome-panel" id="welcomePanel">
       <span class="close-btn" onclick="closeWelcomePanel()">×</span>
       <h1>👋 Welcome!</h1>
@@ -56,12 +178,6 @@
           <div class="slide" style="background-image:url('image/volunteer1 (4).jpg');"></div> 
           <div class="slide" style="background-image:url('image/volunteer1 (5).jpg');"></div> 
           <div class="slide" style="background-image:url('image/volunteer1 (6).jpg');"></div> 
-          <div class="slide" style="background-image:url('image/volunteer1 (7).jpg');"></div> 
-          <div class="slide" style="background-image:url('image/volunteer1 (8).jpg');"></div> 
-          <div class="slide" style="background-image:url('image/volunteer1 (9).jpg');"></div> 
-          <div class="slide" style="background-image:url('image/volunteer1 (10).jpg');"></div>
-          <div class="slide" style="background-image:url('image/volunteer1 (11).jpg');"></div> 
-          <div class="slide" style="background-image:url('image/volunteer1 (12).jpg');"></div>
         </div>
         <div class="dots" id="dots"></div>
       </div>
@@ -79,7 +195,6 @@
             return false;
         }
         
-        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             alert('Please enter a valid email address.');
@@ -87,6 +202,9 @@
         }
         
         return true;
+    }
+    function closeWelcomePanel() {
+      document.getElementById('welcomePanel').style.display = 'none';
     }
   </script>
 </body>
