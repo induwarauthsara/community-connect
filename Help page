@@ -22,7 +22,7 @@
         
         .hero-title {
             color: #fff;
-            font-size: 30em;
+            font-size: 3em;
             font-weight: 600;
             margin-bottom: 18px;
             letter-spacing: 1px;
