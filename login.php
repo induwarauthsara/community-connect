@@ -5,7 +5,7 @@ session_start();
 $servername = "localhost";
 $db_username = "root";     // your DB username
 $db_password = "";         // your DB password
-$dbname = "volunteer_db"; // your database name
+$dbname = "community_connect"; // your database name
 
 $conn = new mysqli($servername, $db_username, $db_password, $dbname);
 if ($conn->connect_error) {
