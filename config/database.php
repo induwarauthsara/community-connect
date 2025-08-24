@@ -438,39 +438,7 @@ function requireRole($required_role, $redirect_url = 'index.php') {
  * @param array $new_values New values (optional)
  */
 function logActivity($action, $table_name = null, $record_id = null, $old_values = null, $new_values = null) {
-    try {
-        $sql = "INSERT INTO activity_logs (user_id, action, table_name, record_id, old_values, new_values, ip_address, user_agent) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        $user_id = $_SESSION['user_id'] ?? null;
-        $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
-        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
-        $old_json = $old_values ? json_encode($old_values) : null;
-        $new_json = $new_values ? json_encode($new_values) : null;
-        
-        $connection = getDatabaseConnection();
-        $stmt = mysqli_prepare($connection, $sql);
-        
-        if ($stmt) {
-            mysqli_stmt_bind_param($stmt, 'issiisss', 
-                $user_id, 
-                $action, 
-                $table_name, 
-                $record_id, 
-                $old_json, 
-                $new_json, 
-                $ip_address, 
-                $user_agent
-            );
-            
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-        }
-        
-        mysqli_close($connection);
-    } catch (Exception $e) {
-        // Log activity logging errors to system log
-        error_log("Failed to log activity: " . $e->getMessage());
-    }
+    // Activity logging disabled (no activity_logs table). No-op for simplicity.
+    return;
 }
 ?>

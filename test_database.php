@@ -85,15 +85,11 @@ require_once 'config/database.php';
         echo "<h2>Table Status</h2>";
         
         // List of expected tables
-        $expected_tables = [
+    $expected_tables = [
             'users' => 'User accounts (Admin, Organization, Volunteer)',
             'organizations' => 'Organization information',
             'projects' => 'Volunteer projects',
-            'volunteer_projects' => 'Volunteer-project assignments',
-            'project_suggestions' => 'Guest project suggestions',
-            'announcements' => 'System announcements',
-            'user_sessions' => 'User login sessions',
-            'activity_logs' => 'System activity tracking'
+            'volunteer_projects' => 'Volunteer-project assignments'
         ];
         
         echo "<div class='table-status'>";

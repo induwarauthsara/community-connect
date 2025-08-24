@@ -1,52 +1,50 @@
 <?php
 /**
- * Community Connect - Database Setup Script
- * 
- * Pure PHP/MySQL volunteer coordination platform using MySQLi Procedural
- * Technology Stack: HTML, CSS, JavaScript, PHP, MySQL (NO external libraries)
- * Database Layer: MySQLi Procedural (NO PDO or ORM)
- * Design Theme: Blue and White color scheme
- * 
- * This script creates the database and all required tables for the
- * Community Connect Volunteer Coordinator Platform if they don't exist.
- * 
- * Run this file once to set up your database structure.
+ * Community Connect - Database Setup Script (Simple UI)
+ *
+ * Actions:
+ * - Drop Database
+ * - Create Database & Table Structure
+ * - Add Sample Data
+ * - Clear Database Sample Data
  */
 
 // Database configuration
 $host = 'localhost';
-$username = 'root';  // Change this to your MySQL username
-$password = '';      // Change this to your MySQL password
+$username = 'root';   // Change this to your MySQL username
+$password = '';       // Change this to your MySQL password
 $database = 'community_connect';
 
-// Create connection without selecting database first
-$connection = mysqli_connect($host, $username, $password);
-
-if (!$connection) {
-    die("❌ Connection failed: " . mysqli_connect_error());
+// 1) Connect to MySQL server (without choosing a database)
+function connectServer($host, $username, $password) {
+    $conn = mysqli_connect($host, $username, $password);
+    if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+    }
+    return $conn;
 }
 
-echo "✅ Connected to MySQL server successfully.<br>";
-
-// Create database if it doesn't exist
-$create_db_sql = "CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-if (mysqli_query($connection, $create_db_sql)) {
-    echo "✅ Database '$database' created or already exists.<br>";
-} else {
-    die("❌ Error creating database: " . mysqli_error($connection));
+// 2) Connect to a specific database
+function connectDatabase($host, $username, $password, $database) {
+    $conn = mysqli_connect($host, $username, $password, $database);
+    if (!$conn) {
+    die("Connection to database failed: " . mysqli_connect_error());
+    }
+    mysqli_set_charset($conn, 'utf8mb4');
+    return $conn;
 }
 
-// Close initial connection
-mysqli_close($connection);
-
-// Connect to the specific database
-$connection = mysqli_connect($host, $username, $password, $database);
-if (!$connection) {
-    die("❌ Connection to database failed: " . mysqli_connect_error());
+// 3) Check if a database exists
+function databaseExists($host, $username, $password, $database) {
+    $conn = @mysqli_connect($host, $username, $password);
+    if (!$conn) { return false; }
+    $db_safe = mysqli_real_escape_string($conn, $database);
+    $res = mysqli_query($conn, "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$db_safe'");
+    $exists = $res && mysqli_num_rows($res) > 0;
+    if ($res) { mysqli_free_result($res); }
+    mysqli_close($conn);
+    return $exists;
 }
-
-mysqli_set_charset($connection, 'utf8mb4');
-echo "✅ Connected to database '$database' successfully.<br><br>";
 
 // SQL statements for creating tables
 $tables = [
@@ -88,7 +86,7 @@ $tables = [
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
     
-    // Projects table
+    // Projects table (also stores guest submissions as pending)
     'projects' => "
         CREATE TABLE IF NOT EXISTS projects (
             project_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -103,11 +101,15 @@ $tables = [
             skills_needed TEXT,
             capacity INT DEFAULT 0,
             current_volunteers INT DEFAULT 0,
-            created_by INT NOT NULL,
+            created_by INT NULL,
             organization_id INT,
             status ENUM('pending','approved','active','completed','cancelled') DEFAULT 'pending',
             priority ENUM('low','medium','high') DEFAULT 'medium',
             image_url VARCHAR(255),
+            -- Guest submission metadata (for non-logged users)
+            submitted_by_name VARCHAR(100) NULL,
+            submitted_by_email VARCHAR(100) NULL,
+            submitted_by_phone VARCHAR(20) NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_status (status),
@@ -138,215 +140,208 @@ $tables = [
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
     
-    // Project suggestions from non-logged users
-    'project_suggestions' => "
-        CREATE TABLE IF NOT EXISTS project_suggestions (
-            suggestion_id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(100) NOT NULL,
-            phone VARCHAR(20),
-            project_title VARCHAR(150) NOT NULL,
-            project_description TEXT,
-            location VARCHAR(200),
-            proposed_start DATE,
-            proposed_end DATE,
-            requirements TEXT,
-            expected_volunteers INT DEFAULT 1,
-            status ENUM('pending','under_review','approved','rejected') DEFAULT 'pending',
-            admin_notes TEXT,
-            reviewed_by INT NULL,
-            reviewed_at TIMESTAMP NULL,
-            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_status (status),
-            INDEX idx_email (email),
-            FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ",
+    // Removed: project_suggestions and announcements (feature deprecated)
     
-    // Announcements
-    'announcements' => "
-        CREATE TABLE IF NOT EXISTS announcements (
-            announcement_id INT AUTO_INCREMENT PRIMARY KEY,
-            title VARCHAR(150) NOT NULL,
-            content TEXT,
-            type ENUM('general','urgent','event','maintenance') DEFAULT 'general',
-            target_audience ENUM('all','volunteers','organizations','admins') DEFAULT 'all',
-            is_active BOOLEAN DEFAULT TRUE,
-            start_date DATE,
-            end_date DATE,
-            created_by INT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_active (is_active),
-            INDEX idx_dates (start_date, end_date),
-            INDEX idx_type (type),
-            FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ",
-    
-    // User sessions for login management
-    'user_sessions' => "
-        CREATE TABLE IF NOT EXISTS user_sessions (
-            session_id VARCHAR(128) PRIMARY KEY,
-            user_id INT NOT NULL,
-            ip_address VARCHAR(45),
-            user_agent TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            expires_at TIMESTAMP,
-            is_active BOOLEAN DEFAULT TRUE,
-            INDEX idx_user (user_id),
-            INDEX idx_expires (expires_at),
-            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    ",
-    
-    // Activity logs for tracking system changes
-    'activity_logs' => "
-        CREATE TABLE IF NOT EXISTS activity_logs (
-            log_id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
-            action VARCHAR(100) NOT NULL,
-            table_name VARCHAR(50),
-            record_id INT,
-            old_values JSON,
-            new_values JSON,
-            ip_address VARCHAR(45),
-            user_agent TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_user (user_id),
-            INDEX idx_action (action),
-            INDEX idx_table (table_name),
-            INDEX idx_created (created_at),
-            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    "
+    // (Activity logs removed)
 ];
 
-// Create tables using MySQLi
-$success_count = 0;
-$total_tables = count($tables);
-
-echo "<h2>Creating Tables:</h2>";
-
-foreach ($tables as $table_name => $sql) {
-    if (mysqli_query($connection, $sql)) {
-        echo "✅ Table '$table_name' created successfully.<br>";
-        $success_count++;
+// Create the database and all tables
+function createStructure($host, $username, $password, $database, $tables) {
+    // Step A: Create database if it doesn't exist
+    $serverConn = connectServer($host, $username, $password);
+    $create_db_sql = "CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+    if (mysqli_query($serverConn, $create_db_sql)) {
+        echo "Database '$database' is ready.<br>";
     } else {
-        echo "❌ Error creating table '$table_name': " . mysqli_error($connection) . "<br>";
+        die("Error creating database: " . mysqli_error($serverConn));
     }
-}
+    mysqli_close($serverConn);
 
-echo "<br>";
+    // Step B: Connect to that database
+    $connection = connectDatabase($host, $username, $password, $database);
 
-// Add foreign key constraints that couldn't be added during table creation
-echo "<h2>Adding Foreign Key Constraints:</h2>";
-
-$foreign_keys = [
-    "ALTER TABLE organizations ADD CONSTRAINT fk_org_created_by 
-     FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE",
-];
-
-foreach ($foreign_keys as $fk_sql) {
-    if (mysqli_query($connection, $fk_sql)) {
-        echo "✅ Foreign key constraint added successfully.<br>";
-    } else {
-        // This might fail if the constraint already exists, which is okay
-        if (strpos(mysqli_error($connection), 'Duplicate key name') === false) {
-            echo "⚠️ Note: " . mysqli_error($connection) . "<br>";
+    // Step C: Create tables
+    $success_count = 0;
+    $total_tables = count($tables);
+    echo "<h2>Creating Tables</h2>";
+    foreach ($tables as $table_name => $sql) {
+        if (mysqli_query($connection, $sql)) {
+            echo "Table '$table_name' OK.<br>";
+            $success_count++;
+        } else {
+            echo "Error creating table '$table_name': " . mysqli_error($connection) . "<br>";
         }
     }
-}
+    echo "<br>";
 
-// Create default admin user if it doesn't exist
-echo "<br><h2>Creating Default Admin User:</h2>";
-
-// Check if admin user exists
-$check_admin_sql = "SELECT COUNT(*) as count FROM users WHERE role = 'admin'";
-$result = mysqli_query($connection, $check_admin_sql);
-$row = mysqli_fetch_assoc($result);
-$admin_count = $row['count'];
-
-if ($admin_count == 0) {
-    $admin_password = password_hash('admin123', PASSWORD_DEFAULT);
-    $insert_admin_sql = "INSERT INTO users (name, email, password, role, is_active, email_verified) 
-                         VALUES ('System Administrator', 'admin@communityconnect.com', ?, 'admin', TRUE, TRUE)";
-    
-    $stmt = mysqli_prepare($connection, $insert_admin_sql);
-    mysqli_stmt_bind_param($stmt, 's', $admin_password);
-    
-    if (mysqli_stmt_execute($stmt)) {
-        echo "✅ Default admin user created successfully.<br>";
-        echo "📧 Email: admin@communityconnect.com<br>";
-        echo "🔑 Password: admin123<br>";
-        echo "⚠️ <strong>Please change the admin password after first login!</strong><br>";
+    // Step D: Add a foreign key (simple attempt; if it already exists, we just show a note)
+    echo "<h2>Adding Foreign Key</h2>";
+    $fk_sql = "ALTER TABLE organizations ADD CONSTRAINT fk_org_created_by 
+               FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE";
+    if (mysqli_query($connection, $fk_sql)) {
+        echo "Foreign key added.<br>";
     } else {
-        echo "❌ Error creating admin user: " . mysqli_stmt_error($stmt) . "<br>";
+        echo "Note: " . htmlspecialchars(mysqli_error($connection)) . "<br>";
     }
-    
-    mysqli_stmt_close($stmt);
-} else {
-    echo "ℹ️ Admin user already exists.<br>";
-}
 
-// Create some sample data (optional)
-echo "<br><h2>Creating Sample Data:</h2>";
+    // Step E: Make sure a default admin exists
+    echo "<br><h2>Default Admin User</h2>";
+    $check_admin_sql = "SELECT COUNT(*) as count FROM users WHERE role = 'admin'";
+    $result = mysqli_query($connection, $check_admin_sql);
+    $row = $result ? mysqli_fetch_assoc($result) : ['count' => 0];
+    $admin_count = (int)($row['count'] ?? 0);
+    if ($result) { mysqli_free_result($result); }
 
-// Check if sample organization exists
-$check_org_sql = "SELECT COUNT(*) as count FROM organizations";
-$result = mysqli_query($connection, $check_org_sql);
-$row = mysqli_fetch_assoc($result);
-$org_count = $row['count'];
-
-if ($org_count == 0) {
-    // Create sample organization
-    $insert_org_sql = "INSERT INTO organizations (name, description, contact_email, created_by) 
-                       VALUES ('Community Helpers', 'A local organization dedicated to community service and volunteer coordination.', 'contact@communityhelpers.org', 1)";
-    
-    if (mysqli_query($connection, $insert_org_sql)) {
-        echo "✅ Sample organization created.<br>";
+    if ($admin_count == 0) {
+        $admin_password = password_hash('admin123', PASSWORD_DEFAULT);
+        $insert_admin_sql = "INSERT INTO users (name, email, password, role, is_active, email_verified) 
+                             VALUES ('System Administrator', 'admin@communityconnect.com', ?, 'admin', TRUE, TRUE)";
+        $stmt = mysqli_prepare($connection, $insert_admin_sql);
+        mysqli_stmt_bind_param($stmt, 's', $admin_password);
+        if (mysqli_stmt_execute($stmt)) {
+            echo "Admin user created.<br>";
+            echo "Email: admin@communityconnect.com<br>";
+            echo "Password: admin123 (please change after first login)<br>";
+        } else {
+            echo "Error creating admin user: " . mysqli_stmt_error($stmt) . "<br>";
+        }
+        mysqli_stmt_close($stmt);
     } else {
-        echo "❌ Error creating sample organization: " . mysqli_error($connection) . "<br>";
+        echo "Admin user already exists.<br>";
     }
-    
-    // Create sample announcement
-    $insert_announcement_sql = "INSERT INTO announcements (title, content, type, created_by) 
-                               VALUES ('Welcome to Community Connect!', 'Thank you for joining our volunteer coordination platform. Start by exploring available projects and connecting with local organizations.', 'general', 1)";
-    
-    if (mysqli_query($connection, $insert_announcement_sql)) {
-        echo "✅ Welcome announcement created.<br>";
+
+    // Step F: Summary
+    echo "<br><hr>";
+    echo "<h2>Summary</h2>";
+    echo "Database: " . htmlspecialchars($database) . "<br>";
+    echo "Host: " . htmlspecialchars($host) . "<br>";
+    echo "<br>Done.";
+
+    mysqli_close($connection);
+}
+
+// Show a simple database summary (only if DB exists)
+function showDatabaseSummary($host, $username, $password, $database, $tables) {
+    $conn = @connectDatabase($host, $username, $password, $database);
+    if (!$conn) { return; }
+    echo '<div class="card" style="grid-column:1 / -1;padding:20px">';
+    echo '<h3>Database Summary</h3>';
+    // Basic info
+    $res = mysqli_query($conn, "SELECT DATABASE() AS db_name, VERSION() AS version");
+    $info = $res ? mysqli_fetch_assoc($res) : ['db_name' => $database, 'version' => 'unknown'];
+    if ($res) { mysqli_free_result($res); }
+    echo '<p class="muted">Name: ' . htmlspecialchars($info['db_name']) . '</p>';
+    echo '<p class="muted">MySQL: ' . htmlspecialchars($info['version']) . '</p>';
+
+    // Tables status
+    echo '<div class="sp"></div>';
+    echo '<strong>Tables</strong>';
+    echo '<ul style="margin-top:8px; padding-left:18px">';
+    foreach (array_keys($tables) as $t) {
+        $exists = mysqli_query($conn, "SHOW TABLES LIKE '" . mysqli_real_escape_string($conn, $t) . "'");
+        $ok = ($exists && mysqli_num_rows($exists) > 0);
+        if ($exists) { mysqli_free_result($exists); }
+        echo '<li>' . htmlspecialchars($t) . ': ' . ($ok ? 'OK' : 'Missing') . '</li>';
+    }
+    echo '</ul>';
+
+    // Simple row counts for key tables if they exist
+    $keyTables = ['users','organizations','projects'];
+    echo '<div class="sp"></div>';
+    echo '<strong>Row Counts</strong>';
+    echo '<ul style="margin-top:8px; padding-left:18px">';
+    foreach ($keyTables as $t) {
+        $exists = mysqli_query($conn, "SHOW TABLES LIKE '" . mysqli_real_escape_string($conn, $t) . "'");
+        $ok = ($exists && mysqli_num_rows($exists) > 0);
+        if ($exists) { mysqli_free_result($exists); }
+        if ($ok) {
+            $cntRes = mysqli_query($conn, "SELECT COUNT(*) AS c FROM `$t`");
+            $cnt = $cntRes ? mysqli_fetch_assoc($cntRes)['c'] : 0;
+            if ($cntRes) { mysqli_free_result($cntRes); }
+            echo '<li>' . htmlspecialchars($t) . ': ' . (int)$cnt . '</li>';
+        } else {
+            echo '<li>' . htmlspecialchars($t) . ': n/a</li>';
+        }
+    }
+    echo '</ul>';
+    echo '</div>';
+
+    mysqli_close($conn);
+}
+
+// Handle actions
+$action = $_POST['action'] ?? null;
+$confirmed = $_POST['confirmed'] ?? 'false';
+
+// Simple UI header
+echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">';
+echo '<title>Community Connect - Setup</title>';
+echo '<style>body{font-family:Arial, sans-serif;background:#f8f9fa;color:#333;padding:20px} .container{max-width:900px;margin:0 auto;background:#fff;border:1px solid #e9ecef;border-radius:8px;padding:20px} h1{color:#007bff} .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0} .card{border:1px solid #e9ecef;border-radius:8px;padding:16px;background:#f8faff} button{background:#007bff;color:#fff;border:none;border-radius:6px;padding:10px 14px;cursor:pointer;width:100%} button:hover{background:#0056b3} .muted{color:#666;font-size:0.9em} form{margin:0} .danger{background:#dc3545} .danger:hover{background:#b02a37} .note{background:#eef6ff;border-left:4px solid #007bff;padding:10px;border-radius:6px;margin:10px 0}</style>';
+echo '</head><body><div class="container">';
+echo '<h1>Community Connect - Database Setup</h1>';
+
+if ($action) {
+    // Backend confirmation check for all CUD actions
+    if ($confirmed !== 'true') {
+        echo '<p style="color:#dc3545"><strong>Error:</strong> Action requires confirmation.</p>';
     } else {
-        echo "❌ Error creating announcement: " . mysqli_error($connection) . "<br>";
+        if ($action === 'drop_db') {
+            echo '<h2>Drop Database</h2>';
+            $conn = connectServer($host, $username, $password);
+            $sql = "DROP DATABASE IF EXISTS `$database`";
+            if (mysqli_query($conn, $sql)) {
+                echo "Database '$database' dropped (if it existed).<br>";
+            } else {
+                echo "Error dropping database: " . mysqli_error($conn) . "<br>";
+            }
+            mysqli_close($conn);
+    } elseif ($action === 'create') {
+            echo '<h2>Create Database & Table Structure</h2>';
+            createStructure($host, $username, $password, $database, $tables);
+        } else {
+            echo '<p class="muted">Unknown action.</p>';
+        }
     }
-} else {
-    echo "ℹ️ Sample data already exists.<br>";
+
+    echo '<div class="note">Reload this page to perform another action.</div>';
 }
 
-// Summary
-echo "<br><hr>";
-echo "<h2>Setup Summary:</h2>";
-echo "📊 Tables created: $success_count/$total_tables<br>";
-echo "🗄️ Database: $database<br>";
-echo "🌐 Host: $host<br>";
+// UI: forms grid
+echo '<div class="grid">';
+$db_exists = databaseExists($host, $username, $password, $database);
+if ($db_exists) {
+    // Summary card first (large)
+    showDatabaseSummary($host, $username, $password, $database, $tables);
 
-if ($success_count == $total_tables) {
-    echo "<br>🎉 <strong style='color: green;'>Database setup completed successfully!</strong><br>";
-    echo "✅ Your Community Connect platform is ready to use.<br><br>";
-    
-    echo "<div style='background-color: #f0f8ff; padding: 15px; border: 1px solid #ccc; border-radius: 5px;'>";
-    echo "<h3>Next Steps:</h3>";
-    echo "1. Configure your database connection in your main application files<br>";
-    echo "2. Set up your web server to point to your project directory<br>";
-    echo "3. Test the login with the admin credentials above<br>";
-    echo "4. Create additional users and organizations as needed<br>";
-    echo "5. <strong>Remember to change the default admin password!</strong><br>";
-    echo "</div>";
+    // Drop DB (with confirmation) - compact card
+    echo '<div class="card" style="max-width:220px;padding:8px;font-size:12px;align-self:start;justify-self:start">';
+    echo '<h3 style="margin:0 0 6px 0;font-size:14px">Drop Database</h3><p class="muted" style="margin:0 0 8px 0;font-size:12px">Remove the entire database.</p>';
+    echo '<form method="POST" onsubmit="return confirmDrop(this)">';
+    echo '<input type="hidden" name="action" value="drop_db">';
+    echo '<input type="hidden" name="confirmed" value="false">';
+    echo '<button type="submit" class="danger" style="padding:6px 8px;font-size:12px">Drop Database</button>';
+    echo '</form></div>';
 } else {
-    echo "<br>⚠️ <strong style='color: orange;'>Setup completed with some issues.</strong><br>";
-    echo "Please check the error messages above and resolve any problems.<br>";
+    // Create DB & Tables only
+    echo '<div class="card"><h3>Create Database & Table Structure</h3><p class="muted">Creates DB and all tables.</p>';
+    echo '<form method="POST" onsubmit="return confirmCreate(this)">';
+    echo '<input type="hidden" name="action" value="create">';
+    echo '<input type="hidden" name="confirmed" value="false">';
+    echo '<button type="submit">Create DB & Tables</button>';
+    echo '</form></div>';
 }
 
-// Close connection
-mysqli_close($connection);
-echo "<br><em>Connection closed.</em>";
+echo '</div>'; // grid
+
+// Footer/help
+echo '<p class="muted">DB: ' . htmlspecialchars($database) . ' @ ' . htmlspecialchars($host) . '</p>';
+
+echo '<script>
+function setConfirmed(form){ form.querySelector("input[name=confirmed]").value = "true"; }
+function confirmDrop(form){ if(confirm("Are you absolutely sure you want to DROP the entire database? This cannot be undone.")){ setConfirmed(form); return true;} return false; }
+function confirmCreate(form){ if(confirm("Create or update the database structure?")){ setConfirmed(form); return true;} return false; }
+// Only drop/create actions are available
+</script>';
+
+echo '</div></body></html>';
 ?>

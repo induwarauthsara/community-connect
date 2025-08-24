@@ -36,7 +36,7 @@ The platform serves as a bridge between three main user groups while ensuring pr
 - Project review and approval workflow
 - Profile management for volunteers
 - Comprehensive admin dashboard
-- Announcements system
+// removed: Announcements system
 - Reporting and analytics
 
 ### Key Capabilities
@@ -44,7 +44,7 @@ The platform serves as a bridge between three main user groups while ensuring pr
 - Self-assignment system for volunteers to projects
 - Project filtering for assigned tasks
 - One organization per volunteer policy
-- Guest project suggestion system
+- Guest submissions saved directly to Projects as 'pending' for admin review
 - Confirmation messages for all database operations
 - Data validation and integrity checks
 
@@ -56,7 +56,7 @@ The platform serves as a bridge between three main user groups while ensuring pr
 - **Project Approval**: Review and approve projects submitted by non-registered users
 - **User Management**: Create, update, and manage all user accounts
 - **Reports**: Generate comprehensive reports and analytics
-- **Announcements**: Create and manage system-wide announcements
+// removed: **Announcements**
 
 ### 2. Organizations
 
@@ -74,7 +74,7 @@ The platform serves as a bridge between three main user groups while ensuring pr
 
 ### 4. Guest Users (Non-logged)
 
-- **Project Suggestions**: Submit project ideas for admin review
+- **Guest Submissions**: Non-logged users can submit projects; they are saved in Projects with status 'pending'
 - **Public Access**: View approved projects and general information
 
 ## Business Rules
@@ -181,7 +181,7 @@ volunteer_projects (
 - **Landing Page**: Public-facing home page
 - **Project Display**: Show approved volunteer projects
 - **Guest Submissions**: Allow project suggestions from non-users
-- **Announcements**: Display system announcements
+// removed: **Announcements**
 - **Navigation**: Links to login and registration
 
 #### 3. Admin Dashboard (`admin_dashboard.php`)
@@ -190,7 +190,7 @@ volunteer_projects (
 - **Project Oversight**: Manage and approve all projects
 - **Organization Management**: Create and manage organizations
 - **Assignment Tracking**: View all volunteer-project assignments
-- **Content Management**: Post and edit announcements
+// removed: **Content Management** announcements
 - **Analytics**: Generate comprehensive reports
 - **System Controls**: Confirmation dialogs for all operations
 

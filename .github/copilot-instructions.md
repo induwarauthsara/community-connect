@@ -1,5 +1,42 @@
 # Community Connect - AI Coding Agent Instructions
 
+## MVP-only (First-year friendly)
+
+Keep this project as a minimal viable product so it's easy to build and explain in a viva. Only implement what is listed below—nothing extra.
+
+- Build only the basics: register, login, simple dashboards, create project, approve project, browse/join project.
+- Use only PHP, MySQL (MySQLi procedural), HTML, CSS, and a tiny bit of vanilla JS for confirmation dialogs.
+- No advanced features: no emails, no images/avatars, no notifications, no AJAX/fetch, no modals beyond browser confirm().
+- Simple UI in blue/white with basic forms and tables.
+- Use the provided helper functions in `config/database.php` and the existing pages in the repo.
+
+## Project Parts and Branch Policy
+
+The project is split into 5 parts:
+1. Login
+2. Home Page
+3. Admin Page
+4. Functionalities
+5. Help Page
+
+You are currently on the `functionalities` branch. In this branch:
+- Only implement the Functionalities part. Do not create or modify Login, Home, Admin, or Help pages.
+- Keep the code minimal and stick to the MVP scope below.
+- Remove files that belong to other parts (Login, Home, Admin, Help) from this branch to keep it clean.
+- Keep the following setup/test files for convenience, but do NOT modify them in this branch: `README.md`, `setup_database.php`, `test_database.php`.
+
+Expected files to remain in this branch (Functionalities only):
+- `config/database.php`
+- `api/submit_project.php`
+- `organization_dashboard.php`
+- `browse_projects.php`
+- `volunteer_dashboard.php`
+- `.github/copilot-instructions.md` (this file)
+Additionally keep (read-only, not modified here):
+- `README.md`
+- `setup_database.php`
+- `test_database.php`
+
 ## Project Specifications
 
 - **Project Name**: community-connect
@@ -7,6 +44,34 @@
 - **Database Layer**: MySQLi Procedural (NO PDO or ORM)
 - **Design Theme**: Blue and White color scheme
 - **Architecture**: Pure PHP/MySQL volunteer coordination platform
+- make this code very simple for understand to First-year university student level
+- MVP Only: implement only the features listed in "MVP Scope" below; avoid enhancements and extras
+
+## MVP Scope (Only build this)
+
+1) Authentication
+- Register (email, password, role selection: admin/organization/volunteer) and Login/Logout
+
+2) Roles and pages (use files already in the repo)
+- Volunteer: `volunteer_dashboard.php`
+    - View simple welcome text and link to browse projects
+    - Browse approved projects and join a project (one click with confirmation)
+- Organization: `organization_dashboard.php`
+    - Create a simple project (title, description) → status starts as `pending`
+    - View own projects (table)
+- Admin: keep it simple
+    - Admin UI is out of scope in this branch; approval logic will be respected by status checks
+
+3) Projects flow
+- New project → status `pending`
+- Admin approves → status `approved`
+- Volunteers can join only approved projects
+- Enforce unique join per volunteer per project
+
+4) Constraints kept simple
+- One organization per volunteer (via `users.organization_id`)
+- Mandatory confirmation dialogs for Create/Update/Delete
+- Server must check `$_POST['confirmed'] === 'true'` before DB changes
 
 ## Architecture Overview
 
@@ -17,15 +82,22 @@ This is a **PHP/MySQL volunteer coordination platform** with a three-tier role-b
 
 **Key Architectural Principle**: Single organization membership per volunteer, with admin-mediated project approval workflow for guest submissions.
 
+### Pages in this repository (use these, no new pages required for MVP)
+ Login/Home/Admin/Help pages are handled in their own branches and are not part of this branch.
+- `organization_dashboard.php`: Org creates and views projects
+- `volunteer_dashboard.php`: Volunteer landing with link to browse
+- `browse_projects.php`: List approved projects; allow volunteer to join
+- `api/submit_project.php`: Simple endpoint for project submissions (can be used by org page)
+- `config/database.php`: All MySQLi helper functions and security helpers
+  - `README.md`, `setup_database.php`, `test_database.php`: may remain for setup/testing reference; do not modify in this branch
+
 ## Database Architecture
 
-The platform uses **8 core MySQL tables** with strict foreign key relationships:
+The platform uses **4 core MySQL tables** with strict foreign key relationships:
 - `users` (multi-role: admin/organization/volunteer)
 - `organizations` → `users.created_by` 
 - `projects` → `users.created_by`, `organizations.org_id`
 - `volunteer_projects` (many-to-many assignments)
-- `project_suggestions` (guest submissions requiring admin approval)
-- `announcements`, `user_sessions`, `activity_logs`
 
 **Critical Pattern**: All database operations use MySQLi Procedural functions in `config/database.php`, never PDO or ORM.
 
@@ -34,11 +106,11 @@ The platform uses **8 core MySQL tables** with strict foreign key relationships:
 ### Database Operations (MySQLi Procedural)
 ```php
 // Always use MySQLi procedural functions from config/database.php
-$connection = getDatabaseConnection();
 $user = getSingleRecord("SELECT * FROM users WHERE email = ?", [$email]);
-$project_id = insertRecord("INSERT INTO projects (...) VALUES (...)", $params);
-logActivity('created_project', 'projects', $project_id);
-mysqli_close($connection);
+$project_id = insertRecord(
+    "INSERT INTO projects (title, description, created_by, status) VALUES (?, ?, ?, 'pending')",
+    [$title, $description, $user_id]
+);
 ```
 
 ### UI/Styling Requirements
@@ -47,11 +119,53 @@ mysqli_close($connection);
 - **No External JS**: Vanilla JavaScript only (no jQuery, frameworks)
 - **Responsive Design**: CSS Grid/Flexbox for layouts
 
+### MVP Do/Don't
+- Do keep forms and tables minimal and readable
+- Do use browser `confirm()` for all create/update/delete confirmations
+- Do sanitize inputs and validate email
+- Don't add extra pages or features not in MVP scope
+- Don't use AJAX, or email
+
+## Functionalities to implement in this branch
+
+Focus only on the following functional flows and keep them very simple:
+
+1) Project creation (Organization)
+- Form in `organization_dashboard.php` to create a project (title, description)
+- Status saved as `pending`
+- Confirm before submit (frontend confirm + backend `$_POST['confirmed'] === 'true'`)
+
+2) Project browsing and joining (Volunteer)
+- `browse_projects.php` lists only `approved` projects
+- One-click join with confirmation
+- Enforce unique join per volunteer per project (server-side check)
+- Prevent joining non-approved projects
+
+3) Basic landing for volunteers
+- `volunteer_dashboard.php` shows a welcome and a link to browse projects
+
+4) Shared behavior
+- Use `config/database.php` helpers (MySQLi procedural only)
+- Use session/role checks where applicable
+- Sanitize inputs and hash passwords if any auth-related helpers are touched
+
+Out of scope for this branch:
+- Login/Register screens, Home page, Admin approval UI, Help page. Setup/Test files (`README.md`, `setup_database.php`, `test_database.php`) are allowed to remain but must not be modified in this branch.
+
+### Functionalities responsibilities (implement here, MVP-simple)
+- Profile management: Volunteers can edit their basic info (e.g., name, email)
+- Organization management: Organizations can edit their basic org info (e.g., org name)
+- Volunteers browse/join projects: Show only approved projects; hide/filter already-joined ones
+- Organizations create/manage projects: Create (pending), list own projects, simple update/delete with confirmation
+- One organization per volunteer: Enforce via `users.organization_id`
+- Validation: Check empty fields, validate email, and basic date checks where applicable
+- Confirmation: Require confirm() before create/update/delete and verify `$_POST['confirmed']==='true'` server-side
+- Feedback: After actions, show a simple success or error message
+
 ### Security Model
 - **Password hashing**: `hashPassword($password)` and `verifyPassword($password, $hash)`
 - **Input sanitization**: `sanitizeInput($input)` before any output
 - **Session management**: `startSecureSession()`, `requireLogin()`, `requireRole($role)`
-- **Activity logging**: `logActivity($action, $table, $record_id)` for all CUD operations
 - **Confirmation dialogs**: ALL Create, Update, Delete operations MUST show confirmation before DB execution
 
 ### Confirmation Pattern (MANDATORY)
@@ -94,33 +208,32 @@ if (hasRole('volunteer')) { /* volunteer-specific logic */ }
 ## Business Logic Constraints
 
 - **One organization per volunteer**: Enforced via `users.organization_id` FK
-- **Project approval flow**: Guest suggestions → `project_suggestions` → admin approval → `projects`
+- **Project approval flow**: Guest submissions saved to `projects` with status `pending` → admin review/approval
 - **Self-assignment**: Volunteers can join projects directly, unique constraint on `volunteer_projects(volunteer_id, project_id)`
 - **MANDATORY Confirmation**: ALL Create, Update, Delete operations require user confirmation dialog
 - **Double confirmation for critical actions**: Delete operations should ask "Are you absolutely sure?" 
-- **Confirmation logging**: Log all confirmation actions in activity_logs for audit trail
 
 ## File Structure Conventions
 
 ```
 ├── config/database.php      # All DB functions, security, session management
-├── setup_database.php       # One-time DB initialization with sample data
+├── setup_database.php       # One-time DB initialization (creates DB, tables, default admin)
 ├── test_database.php        # DB verification tool with visual feedback
 └── DATABASE_SETUP.md        # Setup documentation
 ```
 
 ## Development Guidelines
 
-### When Adding Features
+### When Implementing the MVP
 1. **Always use MySQLi Procedural** - `config/database.php` helper functions only
-2. **Log all database modifications**: `logActivity()` for audit trails
-3. **Validate inputs**: Use `isValidEmail()`, `sanitizeInput()` before processing
-4. **Check permissions**: Use `requireRole()` or `hasRole()` before sensitive operations
-5. **MANDATORY Confirmations**: ALL database Create/Update/Delete operations need user confirmation
-6. **Implement confirmation dialogs**: Use JavaScript confirm() or custom modal before any CUD operation
-7. **Backend confirmation check**: Verify `$_POST['confirmed'] === 'true'` before database execution
-8. **Blue/White theme**: Maintain consistent color scheme across all pages
-9. **No external dependencies**: Pure HTML/CSS/JS/PHP only
+2. **Validate inputs**: Use `isValidEmail()`, `sanitizeInput()` before processing
+3. **Check permissions**: Use `requireRole()` or `hasRole()` before sensitive operations
+4. **MANDATORY Confirmations**: ALL database Create/Update/Delete operations need user confirmation
+5. **Implement confirmation dialogs**: Use JavaScript confirm() or custom modal before any CUD operation
+6. **Backend confirmation check**: Verify `$_POST['confirmed'] === 'true'` before database execution
+7. **Blue/White theme**: Maintain consistent color scheme across all pages
+ 8. **No external dependencies**: Pure HTML/CSS/JS/PHP only
+ 9. **Stay MVP**: No emails, no uploads, no images, no search/pagination, no notifications, no AJAX
 
 ### Confirmation Implementation Examples
 ```html
@@ -145,12 +258,11 @@ function confirmCreate() {
 ```php
 // PHP Backend Confirmation Check
 if ($_POST['action'] === 'create') {
-    if ($_POST['confirmed'] !== 'true') {
+    if (($_POST['confirmed'] ?? 'false') !== 'true') {
         die('Error: Action requires confirmation');
     }
     // Proceed with database insertion
     $project_id = insertRecord($sql, $params);
-    logActivity('created_project', 'projects', $project_id);
 }
 ```
 
@@ -169,13 +281,16 @@ if ($_POST['action'] === 'create') {
 ## Key Integration Points
 
 - **Email validation**: Built-in `isValidEmail()` function
-- **Activity logging**: Automatic via `logActivity()` - tracks user actions with IP/user agent
 - **Session management**: Secure session handling with automatic regeneration
 - **Error handling**: Database errors logged via `error_log()`, user-friendly messages shown
 
 ## Testing & Debugging
+## Viva tips (keep it simple)
+- Be ready to explain: tables, basic CRUD flow, and confirmation checks
+- Walk through: register → login → org creates project (pending) → admin approves → volunteer joins
+- Point out: MySQLi procedural, password hashing, input sanitization, and session checks
+
 
 - **Database connectivity**: `test_database.php` provides comprehensive health check
 - **Helper function testing**: Built into test script (email validation, password hashing)
 - **Visual feedback**: All database operations provide HTML-formatted success/error messages
-- **Activity logs**: Check `activity_logs` table for user action debugging
