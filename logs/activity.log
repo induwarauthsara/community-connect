@@ -1,0 +1,5 @@
+{"timestamp":"2025-08-24 14:59:39","user_id":1,"action":"login","details":"User logged in","ip":"::1"}
+{"timestamp":"2025-08-24 15:00:03","user_id":1,"action":"logout","details":"User logged out","ip":"::1"}
+{"timestamp":"2025-08-24 15:00:06","user_id":1,"action":"login","details":"User logged in","ip":"::1"}
+{"timestamp":"2025-08-24 15:00:06","user_id":1,"action":"login","details":"User logged in","ip":"::1"}
+{"timestamp":"2025-08-24 16:30:59","user_id":1,"action":"login","details":"User logged in","ip":"::1"}

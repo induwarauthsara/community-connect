@@ -3,39 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up</title>
+  <title>Sign Up - Community Connect</title>
   <link rel="stylesheet" href="signup.css">
 </head>
-<body>
-  <body class="signup-page">
+<body class="signup-page">
 
   <div class="signup-container">
     <div class="signup-box">
       <!-- Logo -->
       <div class="logo">
-        <img src="image/logo.png" alt="Logo">
+        <img src="image/logo.png" alt="Community Connect Logo" onerror="this.style.display='none'">
       </div>
 
       <h2>Create Account</h2>
 
-      <form action="signup.php" method="POST" id="signupForm">
+      <form action="signup.php" method="POST" id="signupForm" onsubmit="return confirmSignup(this)">
+        <input type="hidden" name="confirmed" value="false">
+        
         <div class="input-group">
-          <input type="text" name="username" required placeholder=" ">
+          <input type="text" name="name" required placeholder=" ">
           <label>Full Name</label>
         </div>
+        
         <div class="input-group">
           <input type="email" name="email" required placeholder=" ">
           <label>Email Address</label>
         </div>
+        
         <div class="input-group">
-          <input type="tel" name="phone" required placeholder="+94 712345678">
-          <label></label>
+          <input type="tel" name="phone" placeholder="+94 712345678">
+          <label>Phone Number (Optional)</label>
         </div>
+        
         <div class="input-group">
-          <input type="password" name="password" id="password" required placeholder=" ">
-          <label>Password</label>
+          <select name="role" required>
+            <option value="">Select Your Role</option>
+            <option value="volunteer">Volunteer - Join community projects</option>
+            <option value="organization">Organization - Create and manage projects</option>
+            <option value="admin">Administrator - System management</option>
+          </select>
+          <label>Role</label>
+        </div>
+        
+        <div class="input-group">
+          <input type="password" name="password" id="password" required placeholder=" " onkeyup="updatePasswordStrength(this)">
+          <label>Password (min. 6 characters)</label>
           <span class="toggle-pass" onclick="togglePassword()">Show</span>
         </div>
+        <div id="password-strength" class="password-strength"></div>
+        
         <div class="input-group">
           <input type="password" name="confirm_password" id="confirm_password" required placeholder=" ">
           <label>Confirm Password</label>
@@ -44,10 +60,10 @@
 
         <div class="terms">
           <input type="checkbox" name="terms" required>
-          I agree to <a href="#">Terms & Conditions</a>
+          I agree to <a href="#" onclick="showTerms(); return false;">Terms & Conditions</a>
         </div>
 
-        <button type="submit">Sign Up</button>
+        <button type="submit">Create Account</button>
       </form>
 
       <p>Already have an account? <a href="login.html">Login</a></p>
@@ -55,6 +71,76 @@
   </div>
 
 <script src="signup.js"></script>
+<script>
+function confirmSignup(form) {
+    const name = form.querySelector('input[name="name"]').value.trim();
+    const email = form.querySelector('input[name="email"]').value.trim();
+    const password = form.querySelector('input[name="password"]').value;
+    const confirmPassword = form.querySelector('input[name="confirm_password"]').value;
+    const role = form.querySelector('select[name="role"]').value;
+    
+    // Validate form
+    if (!name || !email || !password || !confirmPassword || !role) {
+        alert('Please fill in all required fields.');
+        return false;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address.');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        alert('Password must be at least 6 characters long.');
+        return false;
+    }
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match.');
+        return false;
+    }
+    
+    // Confirmation dialog
+    const roleText = form.querySelector(`select[name="role"] option[value="${role}"]`).textContent;
+    if (confirm(`Create account for ${name} as ${roleText}?`)) {
+        form.querySelector('input[name="confirmed"]').value = 'true';
+        return true;
+    }
+    
+    return false;
+}
+
+function updatePasswordStrength(input) {
+    const password = input.value;
+    const strengthElement = document.getElementById('password-strength');
+    
+    if (password.length === 0) {
+        strengthElement.textContent = '';
+        return;
+    }
+    
+    let strength = 'weak';
+    let color = '#dc3545';
+    
+    if (password.length >= 8 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+        strength = 'strong';
+        color = '#28a745';
+    } else if (password.length >= 6) {
+        strength = 'medium';
+        color = '#ffc107';
+    }
+    
+    strengthElement.textContent = `Password strength: ${strength.charAt(0).toUpperCase() + strength.slice(1)}`;
+    strengthElement.style.color = color;
+}
+
+function showTerms() {
+    alert('Terms and Conditions:\n\n1. Users must provide accurate information\n2. Respect all community guidelines\n3. Maintain professional behavior\n4. Report any issues to administrators\n\nFull terms would be displayed in a proper modal or separate page.');
+}
+</script>
+
 </body>
 </html>
 
