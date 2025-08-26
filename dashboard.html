@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volunteer Management | Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="logo">VolunteerMgmt</div>
+    <ul>
+      <li><a href="#" class="active">Dashboard</a></li>
+      <li><a href="#">Find Opportunities</a></li>
+      <li><a href="#">My Participation</a></li>
+      <li><a href="#">Donate</a></li>
+      <li><a href="#">Settings</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="dashboard-main">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <h1>Welcome, John!</h1>
+      <button onclick="logout()" class="logout-btn">Logout</button>
+    </header>
+
+    <!-- Cards Section -->
+    <div class="cards-container">
+      <div class="card">
+        <h2>Total Hours</h2>
+        <p>42</p>
+      </div>
+      <div class="card">
+        <h2>Upcoming Events</h2>
+        <p>3</p>
+      </div>
+      <div class="card">
+        <h2>My Volunteers</h2>
+        <p>5</p>
+      </div>
+      <div class="card">
+        <h2>Donate Now</h2>
+        <p>Make a Difference</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function logout() {
+      alert('Logging out...');
+      // redirect to login page
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

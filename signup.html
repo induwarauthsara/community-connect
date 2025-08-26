@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="signup.css">
+</head>
+<body>
+  <body class="signup-page">
+
+  <div class="signup-container">
+    <div class="signup-box">
+      <!-- Logo -->
+      <div class="logo">
+        <img src="image/logo.png" alt="Logo">
+      </div>
+
+      <h2>Create Account</h2>
+
+      <form action="signup.php" method="POST" id="signupForm">
+        <div class="input-group">
+          <input type="text" name="username" required placeholder=" ">
+          <label>Full Name</label>
+        </div>
+        <div class="input-group">
+          <input type="email" name="email" required placeholder=" ">
+          <label>Email Address</label>
+        </div>
+        <div class="input-group">
+          <input type="tel" name="phone" required placeholder="+94 712345678">
+          <label></label>
+        </div>
+        <div class="input-group">
+          <input type="password" name="password" id="password" required placeholder=" ">
+          <label>Password</label>
+          <span class="toggle-pass" onclick="togglePassword()">Show</span>
+        </div>
+        <div class="input-group">
+          <input type="password" name="confirm_password" id="confirm_password" required placeholder=" ">
+          <label>Confirm Password</label>
+          <span class="toggle-pass" onclick="toggleConfirm()">Show</span>
+        </div>
+
+        <div class="terms">
+          <input type="checkbox" name="terms" required>
+          I agree to <a href="#">Terms & Conditions</a>
+        </div>
+
+        <button type="submit">Sign Up</button>
+      </form>
+
+      <p>Already have an account? <a href="login.html">Login</a></p>
+    </div>
+  </div>
+
+<script src="signup.js"></script>
+</body>
+</html>
+

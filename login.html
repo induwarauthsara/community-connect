@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volunteer Management | Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>  
+
+
+  <div class="container">
+    <!-- Left Frame -->
+    <div class="left-frame">
+      <h1><u>Volunteer Management</u></h1>
+      <div class="auth-box">
+        <h2>Login</h2>
+        <form action="login.php" method="POST">
+          <div class="input-field">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="Enter your email" required>
+          </div>
+          <div class="input-field">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter your password" required>
+          </div>
+          <button type="submit">Login</button>
+        </form>
+        <div class="auth-links">
+          <a href="signup.html">Sign Up</a> | 
+          <a href="forgot.html">Forgot Password?</a>
+        </div>
+      </div>
+    </div><div class="welcome-panel" id="welcomePanel">
+        <span class="close-btn" onclick="closeWelcomePanel()">×</span>
+
+  <h1>👋 Welcome!</h1>
+  <p>We're your starting point to do more good.</p>
+  <ul>
+    <li>Find ways to volunteer</li>
+    <li>Join local nonprofits</li>
+    <li>Give money or in-kind gifts</li>
+    <li>Track your impact</li>
+    <li>Volunteer with friends</li>
+  </ul>
+</div>
+
+
+    <!-- Right Frame (Slideshow) -->
+    <div class="right-frame">
+  <div class="monitor-frame">
+    
+    <div class="slideshow-container">
+
+    <div class="slide active" style="background-image:url('image/volunteer1.jpg');"></div>
+    <div class="slide" style="background-image:url('image/volunteer1 (1).jpg');"></div>
+     <div class="slide" style="background-image:url('image/volunteer1 (2).jpg');"></div>
+      <div class="slide" style="background-image:url('image/volunteer1 (3).jpg');"></div>
+       <div class="slide" style="background-image:url('image/volunteer1 (4).jpg');"></div> 
+       <div class="slide" style="background-image:url('image/volunteer1 (5).jpg');"></div> 
+       <div class="slide" style="background-image:url('image/volunteer1 (6).jpg');"></div> 
+       <div class="slide" style="background-image:url('image/volunteer1 (7).jpg');"></div> 
+       <div class="slide" style="background-image:url('image/volunteer1 (8).jpg');"></div> 
+       <div class="slide" style="background-image:url('image/volunteer1 (9).jpg');"></div> 
+       <div class="slide" style="background-image:url('image/volunteer1 (10).jpg');"></div>
+        <div class="slide" style="background-image:url('image/volunteer1 (11).jpg');"></div> 
+        <div class="slide" style="background-image:url('image/volunteer1 (12).jpg');"></div>
+      <!-- add more slides -->
+    </div>
+    <div class="dots" id="dots"></div>
+  </div>
+</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
