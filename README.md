@@ -166,6 +166,34 @@ volunteer_projects (
 
 ## Project Structure
 
+### File Organization
+
+```text
+community-connect/
+├── assets/
+│   ├── css/
+│   │   └── main.css          # Main stylesheet with blue/white theme
+│   ├── js/                   # JavaScript files (if needed)
+│   └── images/
+│       └── logo.png          # Community Connect logo
+├── config/
+│   └── database.php          # Database connection settings
+├── includes/
+│   ├── common.php           # Shared utility functions
+│   ├── header.php           # Common header with navigation
+│   └── footer.php           # Common footer
+├── index.php                # Modern landing page with project showcase
+├── login.php                # User authentication
+├── signup.php               # User registration
+├── admin_dashboard.php      # Admin management interface
+├── volunteer_dashboard.php  # Volunteer project management
+├── organization_dashboard.php # Organization project creation
+├── browse_projects.php      # Public project browsing
+├── help.php                 # User guidance and FAQ
+├── logout.php               # Session cleanup
+└── setup_database.php       # Database initialization
+```
+
 ### Core Components
 
 #### 1. Authentication System (`login.php`)
@@ -173,14 +201,12 @@ volunteer_projects (
 - **Login Form**: Email/password authentication
 - **Session Management**: Secure session handling
 - **Role-Based Routing**: Redirect to appropriate dashboard
-- **Password Security**: Hashed password storage using `password_hash()`
 
 #### 2. Public Interface (`index.php`)
 
 - **Landing Page**: Public-facing home page
 - **Project Display**: Show approved volunteer projects
 - **Guest Submissions**: Allow project suggestions from non-users
-// removed: **Announcements**
 - **Navigation**: Links to login and registration
 
 #### 3. Admin Dashboard (`admin_dashboard.php`)
@@ -189,7 +215,6 @@ volunteer_projects (
 - **Project Oversight**: Manage and approve all projects
 - **Organization Management**: Create and manage organizations
 - **Assignment Tracking**: View all volunteer-project assignments
-// removed: **Content Management** announcements
 - **Analytics**: Generate comprehensive reports
 - **System Controls**: Confirmation dialogs for all operations
 
@@ -225,6 +250,8 @@ volunteer_projects (
 - **Backend**: PHP 7.4+ with MySQLi extension
 - **Styling**: Blue (#007bff, #0056b3) and White (#ffffff, #f8f9fa) color palette
 - **No External Dependencies**: No Bootstrap, jQuery, React, Vue, etc.
+- **Authentication**: Simple password storage (no hashing for development ease)
+- **File Organization**: Assets organized in dedicated folders (css/, js/, images/)
 
 ### Installation
 

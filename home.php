@@ -1,33 +1,13 @@
 <?php
-// Include database configuration
-require_once 'config/database.php';
+/**
+ * Community Connect - Home Page
+ * Redirects to main landing page
+ */
 
-// Start secure session
-startSecureSession();
-
-// Check if user is logged in
-$isLoggedIn = isLoggedIn();
-$username = $isLoggedIn ? $_SESSION['username'] : '';
-$userRole = $isLoggedIn ? $_SESSION['role'] : '';
-$userEmail = $isLoggedIn ? $_SESSION['email'] : '';
-
-// Get some statistics for logged-in users
-$stats = [];
-if ($isLoggedIn) {
-    try {
-        // Get total active projects
-        $active_projects = getSingleRecord("SELECT COUNT(*) as count FROM projects WHERE status = 'active'");
-        $stats['active_projects'] = $active_projects['count'];
-        
-        // Get total organizations
-        $total_orgs = getSingleRecord("SELECT COUNT(*) as count FROM organizations");
-        $stats['total_organizations'] = $total_orgs['count'];
-        
-        // Get user's registered projects (if volunteer)
-        if ($userRole === 'volunteer') {
-            $user_projects = getSingleRecord(
-                "SELECT COUNT(*) as count FROM volunteer_projects WHERE volunteer_id = ? AND status IN ('registered', 'confirmed')", 
-                [$_SESSION['user_id']]
+// Redirect to main index page
+header("Location: index.php");
+exit();
+?>
             );
             $stats['user_projects'] = $user_projects['count'];
         }

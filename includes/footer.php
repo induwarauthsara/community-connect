@@ -3,32 +3,42 @@
  * Shared Footer Component - Community Connect
  */
 ?>
-    </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; <?php echo date('Y'); ?> Community Connect. Building stronger communities through volunteer coordination.</p>
+        </div>
+    </footer>
+    
     <script>
-        // Confirmation functions for all CUD operations
-        function confirmAction(message, form) {
-            if (confirm(message + ' This action cannot be undone.')) {
-                form.querySelector('input[name="confirmed"]').value = 'true';
-                return true;
-            }
-            return false;
+        // Confirmation functions for database operations
+        function confirmAction(message) {
+            return confirm(message + ' This action cannot be undone.');
         }
         
-        function confirmDelete(form) {
-            return confirmAction('Are you absolutely sure you want to delete this?', form);
+        function confirmDelete() {
+            return confirmAction('Are you absolutely sure you want to delete this?');
         }
         
-        function confirmUpdate(form) {
-            return confirmAction('Are you sure you want to update this?', form);
+        function confirmUpdate() {
+            return confirmAction('Are you sure you want to update this?');
         }
         
-        function confirmCreate(form) {
-            return confirmAction('Are you sure you want to create this?', form);
+        function confirmCreate() {
+            return confirmAction('Are you sure you want to create this?');
         }
         
-        function confirmJoin(form) {
-            return confirmAction('Are you sure you want to join this project?', form);
+        function confirmJoin() {
+            return confirm('Are you sure you want to join this project?');
         }
+        
+        function confirmLeave() {
+            return confirm('Are you sure you want to leave this project?');
+        }
+    </script>
+</body>
+</html>
         
         function confirmLeave(form) {
             return confirmAction('Are you sure you want to leave this project?', form);

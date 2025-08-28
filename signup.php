@@ -1,20 +1,29 @@
 <?php
 /**
- * Community Connect - User Registration Processing
- * Handles user registration with role selection and proper validation
+ * Community Connect - User Registration
+ * Simple registration without password hashing
  */
 
 require_once 'config/database.php';
 require_once 'includes/common.php';
 
-// Start secure session
-startSecureSession();
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// If already logged in, redirect to appropriate dashboard
+// If already logged in, redirect to dashboard
 if (isLoggedIn()) {
     $user = getCurrentUser();
     if ($user) {
-        redirectWithMessage(getDashboardUrl($user['role']), '', 'info');
+        if ($user['role'] === 'admin') {
+            header("Location: admin_dashboard.php");
+        } elseif ($user['role'] === 'organization') {
+            header("Location: organization_dashboard.php");
+        } else {
+            header("Location: volunteer_dashboard.php");
+        }
+        exit();
     }
 }
 
@@ -24,30 +33,248 @@ $success_message = '';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $phone = $_POST['phone'] ?? '';
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
-    $role = $_POST['role'] ?? '';
-    $confirmed = $_POST['confirmed'] ?? 'false';
+    $role = $_POST['role'] ?? 'volunteer';
     
-    // Backend confirmation check (MANDATORY for registration)
-    if ($confirmed !== 'true') {
-        $error_message = 'Registration requires confirmation.';
+    // Validate inputs
+    if (empty($name) || empty($email) || empty($password) || empty($confirm_password)) {
+        $error_message = 'Please fill in all required fields.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = 'Please enter a valid email address.';
+    } elseif ($password !== $confirm_password) {
+        $error_message = 'Passwords do not match.';
+    } elseif (strlen($password) < 4) {
+        $error_message = 'Password must be at least 4 characters long.';
     } else {
-        // Validate required fields
-        $missing_fields = validateRequiredFields(['name', 'email', 'password', 'confirm_password', 'role']);
-        if (!empty($missing_fields)) {
-            $error_message = 'Please fill in all required fields.';
-        } elseif (!isValidEmail($email)) {
-            $error_message = 'Please enter a valid email address.';
-        } elseif ($password !== $confirm_password) {
-            $error_message = 'Passwords do not match.';
-        } elseif (strlen($password) < 6) {
-            $error_message = 'Password must be at least 6 characters long.';
-        } elseif (!in_array($role, ['admin', 'organization', 'volunteer'])) {
-            $error_message = 'Please select a valid role.';
+        // Check if email already exists
+        $check_sql = "SELECT user_id FROM users WHERE email = ?";
+        if ($check_stmt = mysqli_prepare($connection, $check_sql)) {
+            mysqli_stmt_bind_param($check_stmt, "s", $email);
+            if (mysqli_stmt_execute($check_stmt)) {
+                $check_result = mysqli_stmt_get_result($check_stmt);
+                if (mysqli_num_rows($check_result) > 0) {
+                    $error_message = 'An account with this email already exists.';
+                } else {
+                    // Create new user (simple password storage)
+                    $insert_sql = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
+                    if ($insert_stmt = mysqli_prepare($connection, $insert_sql)) {
+                        mysqli_stmt_bind_param($insert_stmt, "ssss", $name, $email, $password, $role);
+                        if (mysqli_stmt_execute($insert_stmt)) {
+                            $success_message = 'Account created successfully! You can now login.';
+                            // Clear form data
+                            $name = $email = '';
+                        } else {
+                            $error_message = 'Failed to create account. Please try again.';
+                        }
+                        mysqli_stmt_close($insert_stmt);
+                    }
+                }
+            }
+            mysqli_stmt_close($check_stmt);
+        } else {
+            $error_message = 'Database error. Please try again.';
+        }
+    }
+}
+
+include 'includes/header.php';
+?>
+
+<style>
+    .signup-container {
+        max-width: 500px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
+    
+    .signup-card {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .signup-logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+    }
+    
+    .signup-title {
+        color: var(--dark-blue);
+        margin-bottom: 10px;
+        font-size: 1.8rem;
+    }
+    
+    .signup-subtitle {
+        color: var(--gray);
+        margin-bottom: 30px;
+    }
+    
+    .form-group {
+        text-align: left;
+        margin-bottom: 20px;
+    }
+    
+    .role-selection {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .role-option {
+        padding: 12px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .role-option:hover {
+        border-color: var(--primary-blue);
+        background: var(--light-blue);
+    }
+    
+    .role-option input[type="radio"] {
+        margin-right: 5px;
+    }
+    
+    .role-option.selected {
+        border-color: var(--primary-blue);
+        background: var(--light-blue);
+    }
+    
+    .signup-btn {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .login-link {
+        color: var(--primary-blue);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .login-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="signup-container">
+    <div class="signup-card">
+        <img src="assets/images/logo.png" alt="Community Connect Logo" class="signup-logo">
+        <h1 class="signup-title">Join Community Connect</h1>
+        <p class="signup-subtitle">Create your account to get started</p>
+
+        <?php if ($error_message): ?>
+            <div class="alert alert-danger">
+                <?php echo sanitizeInput($error_message); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($success_message): ?>
+            <div class="alert alert-success">
+                <?php echo sanitizeInput($success_message); ?>
+                <p class="mt-2">
+                    <a href="login.php" class="btn btn-primary">Go to Login</a>
+                </p>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!$success_message): ?>
+            <form method="POST" action="signup.php">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" class="form-control" required
+                           value="<?php echo isset($name) ? sanitizeInput($name) : ''; ?>"
+                           placeholder="Enter your full name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" required
+                           value="<?php echo isset($email) ? sanitizeInput($email) : ''; ?>"
+                           placeholder="Enter your email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required
+                           placeholder="Choose a password (min 4 characters)">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" required
+                           placeholder="Confirm your password">
+                </div>
+
+                <div class="form-group">
+                    <label>I am joining as:</label>
+                    <div class="role-selection">
+                        <div class="role-option">
+                            <label>
+                                <input type="radio" name="role" value="volunteer" checked>
+                                <div>🙋‍♂️ Volunteer</div>
+                                <small>Individual volunteer</small>
+                            </label>
+                        </div>
+                        <div class="role-option">
+                            <label>
+                                <input type="radio" name="role" value="organization">
+                                <div>🏢 Organization</div>
+                                <small>Create projects</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary signup-btn" 
+                        onclick="return confirm('Create your Community Connect account?')">
+                    Create Account
+                </button>
+            </form>
+        <?php endif; ?>
+
+        <div class="divider">
+            <span>or</span>
+        </div>
+
+        <p>
+            Already have an account? 
+            <a href="login.php" class="login-link">Sign in here</a>
+        </p>
+        
+        <p class="mt-3">
+            <a href="index.php" class="text-muted">← Back to Home</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    // Handle role selection styling
+    document.querySelectorAll('.role-option input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.role-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            this.closest('.role-option').classList.add('selected');
+        });
+    });
+    
+    // Set initial selection
+    document.querySelector('.role-option input[checked]').closest('.role-option').classList.add('selected');
+</script>
+
+<?php include 'includes/footer.php'; ?>
         } else {
             // Check if email already exists
             $existing_user = getSingleRecord(
