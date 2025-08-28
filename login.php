@@ -1,9 +1,4 @@
-<?php
-/**
- * Community Connect - User Login
- * Simple authentication without password hashing
- */
-
+  <?php
 require_once 'config/database.php';
 require_once 'includes/common.php';
 
@@ -41,35 +36,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = 'Please enter a valid email address.';
     } else {
         // Simple database query without password hashing
-        $sql = "SELECT * FROM users WHERE email = ?";
-        if ($stmt = mysqli_prepare($connection, $sql)) {
-            mysqli_stmt_bind_param($stmt, "s", $email);
-            if (mysqli_stmt_execute($stmt)) {
-                $result = mysqli_stmt_get_result($stmt);
-                $user = mysqli_fetch_assoc($result);
-                
-                if ($user && $user['password'] === $password) {
-                    // Login successful
-                    $_SESSION['user_id'] = $user['user_id'];
-                    $_SESSION['user_role'] = $user['role'];
-                    $_SESSION['user_name'] = $user['name'];
+        $email = mysqli_real_escape_string($connection, $email);
+        $result = mysqli_query($connection, "SELECT * FROM users WHERE email = '$email'");
+        $user = mysqli_fetch_assoc($result);
+        
+        if ($user && $user['password'] === $password) {
+            // Login successful
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['user_role'] = $user['role'];
+            $_SESSION['user_name'] = $user['name'];
 
-                    // Redirect to appropriate dashboard
-                    if ($user['role'] === 'admin') {
-                        header("Location: admin_dashboard.php");
-                    } elseif ($user['role'] === 'organization') {
-                        header("Location: organization_dashboard.php");
-                    } else {
-                        header("Location: volunteer_dashboard.php");
-                    }
-                    exit();
-                } else {
-                    $error_message = 'Invalid email or password.';
-                }
+            // Redirect to appropriate dashboard
+            if ($user['role'] === 'admin') {
+                header("Location: admin_dashboard.php");
+            } elseif ($user['role'] === 'organization') {
+                header("Location: organization_dashboard.php");
+            } else {
+                header("Location: volunteer_dashboard.php");
             }
-            mysqli_stmt_close($stmt);
+            exit();
         } else {
-            $error_message = 'Database error. Please try again.';
+            $error_message = 'Invalid email or password.';
         }
     }
 }
@@ -162,7 +149,7 @@ include 'includes/header.php';
 
         <?php if ($error_message): ?>
             <div class="alert alert-danger">
-                <?php echo sanitizeInput($error_message); ?>
+                <?php echo htmlspecialchars($error_message); ?>
             </div>
         <?php endif; ?>
 
@@ -170,7 +157,7 @@ include 'includes/header.php';
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" class="form-control" required
-                       value="<?php echo isset($email) ? sanitizeInput($email) : ''; ?>"
+                       value="<?php echo isset($email) ? htmlspecialchars($email) : ''; ?>"
                        placeholder="Enter your email">
             </div>
 
@@ -199,103 +186,4 @@ include 'includes/header.php';
         </p>
     </div>
 </div>
-
-<?php include 'includes/footer.php'; ?>
-
-                // Log activity
-                logUserActivity($user['user_id'], 'login', 'User logged in');
-
-                // Redirect to appropriate dashboard
-                $dashboard_url = getDashboardUrl($user['role']);
-                redirectWithMessage($dashboard_url, 'Welcome back, ' . sanitizeInput($user['name']) . '!', 'success');
-            } else {
-                $error_message = 'Incorrect password. Please try again.';
-            }
-        } else {
-            $error_message = 'No account found with this email address.';
-        }
-    }
-}
-
-// Include header
-include 'includes/header.php';
-?>
-
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-
-                    <!-- Logo -->
-                    <div class="text-center mb-4">
-                        <img src="image/logo.png" alt="Community Connect Logo" 
-                        style="width: 250px; height: auto;">
-                        <p class="text-muted">Sign in to continue</p>
-                    </div>
-
-                    <?php if ($error_message): ?>
-                        <div class="alert alert-error">
-                            <?php echo sanitizeInput($error_message); ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($success_message): ?>
-                        <div class="alert alert-success">
-                            <?php echo sanitizeInput($success_message); ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <form method="POST" action="login.php" onsubmit="return validateLoginForm(this)">
-                        <div class="form-group">
-                            <label class="form-label">Email Address</label>
-                            <input type="email" name="email" class="form-control" required
-                                   value="<?php echo isset($email) ? sanitizeInput($email) : ''; ?>"
-                                   placeholder="Enter your email address">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Password</label>
-                            <input type="password" name="password" class="form-control" required
-                                   placeholder="Enter your password">
-                        </div>
-
-                        <button type="submit" class="btn-primary" style="width: 100%;">
-                            Login
-                        </button>
-                    </form>
-
-                    <div class="text-center mt-3">
-                        <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
-                        <p><a href="forgot.html">Forgot Password?</a></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-function validateLoginForm(form) {
-    const email = form.querySelector('input[name="email"]').value.trim();
-    const password = form.querySelector('input[name="password"]').value;
-
-    if (!email || !password) {
-        alert('Please fill in all fields.');
-        return false;
-    }
-
-    if (!isValidEmail(email)) {
-        alert('Please enter a valid email address.');
-        return false;
-    }
-
-    // Set loading state on submit button
-    const submitBtn = form.querySelector('button[type="submit"]');
-    setButtonLoading(submitBtn, 'Logging in...');
-    
-    return true;
-}
-</script>
-
 <?php include 'includes/footer.php'; ?>

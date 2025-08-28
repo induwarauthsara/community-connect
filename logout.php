@@ -1,20 +1,6 @@
 <?php
-/**
- * Community Connect - User Logout
- * Secure session termination and logout functionality
- */
-
 require_once 'config/database.php';
 require_once 'includes/common.php';
-
-// Start secure session
-startSecureSession();
-
-// Log activity if user is logged in
-if (isLoggedIn()) {
-    $user_id = $_SESSION['user_id'];
-    logUserActivity($user_id, 'logout', 'User logged out');
-}
 
 // Destroy session completely
 session_unset();

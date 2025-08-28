@@ -1,13 +1,4 @@
 <?php
-/**
- * Community Connect - Database Setup Script (Simple UI)
- *
- * Actions:
- * - Drop Database
- * - Create Database & Table Structure
- * - Add Sample Data
- * - Clear Database Sample Data
- */
 
 // Database configuration
 $host = 'localhost';

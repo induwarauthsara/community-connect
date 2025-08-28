@@ -1,11 +1,6 @@
 <?php
-/**
- * Community Connect - Home Page
- * Redirects to main landing page
- */
-
 // Redirect to main index page
-header("Location: index.php");
+// header("Location: index.php");
 exit();
 ?>
             );

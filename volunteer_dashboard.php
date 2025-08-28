@@ -23,14 +23,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         die('Error: Action requires confirmation');
     }
     
-    $name = sanitizeInput($_POST['name']);
-    $email = sanitizeInput($_POST['email']);
-    $phone = sanitizeInput($_POST['phone'] ?? '');
-    $address = sanitizeInput($_POST['address'] ?? '');
-    $skills = sanitizeInput($_POST['skills'] ?? '');
-    $birth_date = sanitizeInput($_POST['birth_date'] ?? '');
-    $emergency_contact = sanitizeInput($_POST['emergency_contact'] ?? '');
-    $emergency_phone = sanitizeInput($_POST['emergency_phone'] ?? '');
+    $name = htmlspecialchars($_POST['name']);
+    $email = htmlspecialchars($_POST['email']);
+    $phone = htmlspecialchars($_POST['phone'] ?? '');
+    $address = htmlspecialchars($_POST['address'] ?? '');
+    $skills = htmlspecialchars($_POST['skills'] ?? '');
+    $birth_date = htmlspecialchars($_POST['birth_date'] ?? '');
+    $emergency_contact = htmlspecialchars($_POST['emergency_contact'] ?? '');
+    $emergency_phone = htmlspecialchars($_POST['emergency_phone'] ?? '');
     
     // Validation
     $required_fields = ['name' => $name, 'email' => $email];

@@ -1,9 +1,4 @@
 <?php
-/**
- * Community Connect - Modern Home Page
- * Landing page with project showcase and guest submissions
- */
-
 require_once 'config/database.php';
 require_once 'includes/common.php';
 
@@ -22,16 +17,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_project'])) {
     $capacity = (int)($_POST['capacity'] ?? 0);
     
     if ($title && $description && $location && $start_date && $end_date) {
+        $title = mysqli_real_escape_string($connection, $title);
+        $description = mysqli_real_escape_string($connection, $description);
+        $location = mysqli_real_escape_string($connection, $location);
+        $start_date = mysqli_real_escape_string($connection, $start_date);
+        $end_date = mysqli_real_escape_string($connection, $end_date);
+        
         $sql = "INSERT INTO projects (title, description, location, start_date, end_date, capacity, created_by, status) 
-                VALUES (?, ?, ?, ?, ?, ?, 0, 'pending')";
-        if ($stmt = mysqli_prepare($connection, $sql)) {
-            mysqli_stmt_bind_param($stmt, "sssssi", $title, $description, $location, $start_date, $end_date, $capacity);
-            if (mysqli_stmt_execute($stmt)) {
-                $message = "Thank you! Your project has been submitted for admin review.";
-            } else {
-                $error = "Failed to submit project. Please try again.";
-            }
-            mysqli_stmt_close($stmt);
+                VALUES ('$title', '$description', '$location', '$start_date', '$end_date', $capacity, 0, 'pending')";
+        
+        if (mysqli_query($connection, $sql)) {
+            $message = "Thank you! Your project has been submitted for admin review.";
+        } else {
+            $error = "Failed to submit project. Please try again.";
         }
     } else {
         $error = "Please fill in all required fields.";
@@ -46,11 +44,22 @@ $projects_query = "SELECT p.*, u.name as creator_name FROM projects p
 $projects_result = mysqli_query($connection, $projects_query);
 
 // Get statistics
-$stats = [
-    'total_projects' => getSingleRecord("SELECT COUNT(*) as count FROM projects WHERE status IN ('approved', 'active')")['count'] ?? 0,
-    'total_volunteers' => getSingleRecord("SELECT COUNT(*) as count FROM users WHERE role = 'volunteer'")['count'] ?? 0,
-    'active_assignments' => getSingleRecord("SELECT COUNT(*) as count FROM volunteer_projects")['count'] ?? 0
-];
+$stats = [];
+
+// Total projects
+$result = mysqli_query($connection, "SELECT COUNT(*) as count FROM projects WHERE status IN ('approved', 'active')");
+$row = mysqli_fetch_assoc($result);
+$stats['total_projects'] = $row['count'] ?? 0;
+
+// Total volunteers
+$result = mysqli_query($connection, "SELECT COUNT(*) as count FROM users WHERE role = 'volunteer'");
+$row = mysqli_fetch_assoc($result);
+$stats['total_volunteers'] = $row['count'] ?? 0;
+
+// Active assignments
+$result = mysqli_query($connection, "SELECT COUNT(*) as count FROM volunteer_projects");
+$row = mysqli_fetch_assoc($result);
+$stats['active_assignments'] = $row['count'] ?? 0;
 
 include 'includes/header.php';
 ?>
@@ -240,21 +249,20 @@ include 'includes/header.php';
         <div class="projects-grid">
             <?php while ($project = mysqli_fetch_assoc($projects_result)): ?>
                 <div class="project-card">
-                    <h3 class="project-title"><?php echo sanitizeInput($project['title']); ?></h3>
+                    <h3 class="project-title"><?php echo htmlspecialchars($project['title']); ?></h3>
                     <div class="project-meta">
-                        📍 <?php echo sanitizeInput($project['location']); ?> • 
-                        📅 <?php echo formatDate($project['start_date']); ?>
+                        📍 <?php echo htmlspecialchars($project['location']); ?> • 
+                        📅 <?php echo date('M j, Y', strtotime($project['start_date'])); ?>
                         <?php if ($project['capacity'] > 0): ?>
                             • 👥 <?php echo $project['capacity']; ?> volunteers needed
                         <?php endif; ?>
                     </div>
                     <div class="project-description">
-                        <?php echo sanitizeInput(substr($project['description'], 0, 150)); ?>...
+                        <?php echo htmlspecialchars(substr($project['description'], 0, 150)); ?>...
                     </div>
                     <div class="project-footer">
                         <small class="text-muted">
-                            By: <?php echo sanitizeInput($project['creator_name'] ?? 'Community'); ?>
-                        </small>
+                            By: <?php echo htmlspecialchars($project['creator_name'] ?? 'Community'); ?></small>
                         <a href="login.php" class="btn btn-primary">Join Project</a>
                     </div>
                 </div>

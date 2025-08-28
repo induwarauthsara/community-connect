@@ -19,13 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         die('Error: Action requires confirmation');
     }
     
-    $name = sanitizeInput($_POST['name']);
-    $description = sanitizeInput($_POST['description'] ?? '');
-    $contact_email = sanitizeInput($_POST['contact_email'] ?? '');
-    $contact_phone = sanitizeInput($_POST['contact_phone'] ?? '');
-    $website = sanitizeInput($_POST['website'] ?? '');
-    $address = sanitizeInput($_POST['address'] ?? '');
-    $mission = sanitizeInput($_POST['mission'] ?? '');
+    $name = htmlspecialchars($_POST['name']);
+    $description = htmlspecialchars($_POST['description'] ?? '');
+    $contact_email = htmlspecialchars($_POST['contact_email'] ?? '');
+    $contact_phone = htmlspecialchars($_POST['contact_phone'] ?? '');
+    $website = htmlspecialchars($_POST['website'] ?? '');
+    $address = htmlspecialchars($_POST['address'] ?? '');
+    $mission = htmlspecialchars($_POST['mission'] ?? '');
     $established_year = (int)($_POST['established_year'] ?? 0);
     
     // Validation
@@ -59,13 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         die('Error: Action requires confirmation');
     }
     
-    $name = sanitizeInput($_POST['name']);
-    $description = sanitizeInput($_POST['description'] ?? '');
-    $contact_email = sanitizeInput($_POST['contact_email'] ?? '');
-    $contact_phone = sanitizeInput($_POST['contact_phone'] ?? '');
-    $website = sanitizeInput($_POST['website'] ?? '');
-    $address = sanitizeInput($_POST['address'] ?? '');
-    $mission = sanitizeInput($_POST['mission'] ?? '');
+    $name = htmlspecialchars($_POST['name']);
+    $description = htmlspecialchars($_POST['description'] ?? '');
+    $contact_email = htmlspecialchars($_POST['contact_email'] ?? '');
+    $contact_phone = htmlspecialchars($_POST['contact_phone'] ?? '');
+    $website = htmlspecialchars($_POST['website'] ?? '');
+    $address = htmlspecialchars($_POST['address'] ?? '');
+    $mission = htmlspecialchars($_POST['mission'] ?? '');
     $established_year = (int)($_POST['established_year'] ?? 0);
     
     // Validation
@@ -100,13 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         die('Error: Action requires confirmation');
     }
     
-    $title = sanitizeInput($_POST['title']);
-    $description = sanitizeInput($_POST['description'] ?? '');
-    $location = sanitizeInput($_POST['location'] ?? '');
-    $start_date = sanitizeInput($_POST['start_date'] ?? '');
-    $end_date = sanitizeInput($_POST['end_date'] ?? '');
+    $title = htmlspecialchars($_POST['title']);
+    $description = htmlspecialchars($_POST['description'] ?? '');
+    $location = htmlspecialchars($_POST['location'] ?? '');
+    $start_date = htmlspecialchars($_POST['start_date'] ?? '');
+    $end_date = htmlspecialchars($_POST['end_date'] ?? '');
     $max_volunteers = (int)($_POST['max_volunteers'] ?? 0);
-    $required_skills = sanitizeInput($_POST['required_skills'] ?? '');
+    $required_skills = htmlspecialchars($_POST['required_skills'] ?? '');
     
     // Validation
     $required_fields = ['title' => $title];
@@ -142,13 +142,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     
     $project_id = (int)$_POST['project_id'];
-    $title = sanitizeInput($_POST['title']);
-    $description = sanitizeInput($_POST['description'] ?? '');
-    $location = sanitizeInput($_POST['location'] ?? '');
-    $start_date = sanitizeInput($_POST['start_date'] ?? '');
-    $end_date = sanitizeInput($_POST['end_date'] ?? '');
+    $title = htmlspecialchars($_POST['title']);
+    $description = htmlspecialchars($_POST['description'] ?? '');
+    $location = htmlspecialchars($_POST['location'] ?? '');
+    $start_date = htmlspecialchars($_POST['start_date'] ?? '');
+    $end_date = htmlspecialchars($_POST['end_date'] ?? '');
     $max_volunteers = (int)($_POST['max_volunteers'] ?? 0);
-    $required_skills = sanitizeInput($_POST['required_skills'] ?? '');
+    $required_skills = htmlspecialchars($_POST['required_skills'] ?? '');
     
     // Validation  
     $required_fields = ['title' => $title];

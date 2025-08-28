@@ -1,7 +1,4 @@
 <?php
-/**
- * Shared Footer Component - Community Connect
- */
 ?>
     </main>
     
@@ -35,13 +32,6 @@
         
         function confirmLeave() {
             return confirm('Are you sure you want to leave this project?');
-        }
-    </script>
-</body>
-</html>
-        
-        function confirmLeave(form) {
-            return confirmAction('Are you sure you want to leave this project?', form);
         }
     </script>
 </body>
