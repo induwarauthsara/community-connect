@@ -1,0 +1,80 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f8ff;
+  color: #333;
+  display: flex;
+}
+
+.sidebar {
+  width: 200px;
+  height: 100vh;
+  background: linear-gradient(#0077b6, #00b4d8); /* ocean + sky blue */
+  color: white;
+  padding: 15px;
+}
+
+.sidebar h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.sidebar ul li:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.main {
+  flex: 1;
+  padding: 20px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  background: #0096c7;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.section {
+  background: white;
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+button {
+  padding: 5px 10px;
+  border: none;
+  background: #0077b6;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button.remove {
+  background: #e63946;
+}
