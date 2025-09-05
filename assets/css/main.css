@@ -22,6 +22,7 @@ main {
     margin-top: 20px;
     min-height: calc(100vh - 120px);
     box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.1);
+    padding-bottom: 60px;
 }
 
 
@@ -50,7 +51,7 @@ main {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 10px 20px 20px 20px;
 }
 
 .card {
@@ -530,6 +531,15 @@ main {
 }
 
 
+/* Last element spacing */
+
+.content-wrapper>*:last-child,
+section:last-of-type,
+.card:last-child {
+    margin-bottom: 40px !important;
+}
+
+
 /* Footer */
 
 .footer {
@@ -609,7 +619,10 @@ main {
 }
 
 @keyframes bounce {
-    0%, 20%, 60%, 100% {
+    0%,
+    20%,
+    60%,
+    100% {
         transform: translateY(0);
     }
     40% {
@@ -652,7 +665,9 @@ main {
     animation: pulse 2s infinite;
 }
 
+
 /* Modern Glassmorphism Effects */
+
 .glass {
     background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
@@ -669,7 +684,9 @@ main {
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
+
 /* Modern Loading Spinner */
+
 .spinner {
     width: 40px;
     height: 40px;
@@ -680,16 +697,24 @@ main {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
+
 /* Smooth Scrolling */
+
 html {
     scroll-behavior: smooth;
 }
 
+
 /* Custom Scrollbar */
+
 ::-webkit-scrollbar {
     width: 12px;
 }

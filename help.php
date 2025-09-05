@@ -29,7 +29,7 @@ include 'includes/header.php';
         .main-content {
             margin: 0 auto;
             max-width: 1000px;
-            padding: 40px 24px 0 24px;
+            padding: 40px 24px 60px 24px;
         }
 
         .section {
