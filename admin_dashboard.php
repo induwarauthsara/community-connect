@@ -40,6 +40,42 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_stats') {
     exit();
 }
 
+// Handle AJAX request for project details
+if (isset($_GET['action']) && $_GET['action'] === 'get_project_details') {
+    header('Content-Type: application/json');
+    
+    $project_id = (int)$_GET['project_id'];
+    
+    $query = "SELECT p.*, o.name as org_name, 
+              (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id AND vp.status = 'confirmed') as confirmed_volunteers
+              FROM projects p 
+              LEFT JOIN organizations o ON p.organization_id = o.org_id 
+              WHERE p.project_id = $project_id";
+    
+    $result = mysqli_query($connection, $query);
+    $project = mysqli_fetch_assoc($result);
+    
+    if ($project) {
+        // Get volunteer assignments
+        $volunteers_query = "SELECT u.name, u.email, vp.status, vp.assigned_at 
+                           FROM volunteer_projects vp 
+                           JOIN users u ON vp.volunteer_id = u.user_id 
+                           WHERE vp.project_id = $project_id 
+                           ORDER BY vp.assigned_at DESC";
+        $volunteers_result = mysqli_query($connection, $volunteers_query);
+        $volunteers = [];
+        while ($volunteer = mysqli_fetch_assoc($volunteers_result)) {
+            $volunteers[] = $volunteer;
+        }
+        $project['volunteers'] = $volunteers;
+        
+        echo json_encode($project);
+    } else {
+        echo json_encode(['error' => 'Project not found']);
+    }
+    exit();
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = trim($_POST['action'] ?? '');
@@ -879,6 +915,17 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- Project Details Modal -->
+<div id="project-details-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeProjectDetailsModal()">&times;</span>
+        <h2>Project Details</h2>
+        <div id="project-details-content">
+            <div class="loading">Loading project details...</div>
+        </div>
+    </div>
+</div>
+
 <style>
 .admin-dashboard {
     max-width: 1200px;
@@ -1156,6 +1203,60 @@ include 'includes/header.php';
     color: #000;
 }
 
+.project-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.project-detail-item {
+    margin-bottom: 15px;
+}
+
+.project-detail-item label {
+    font-weight: bold;
+    color: var(--primary-blue);
+    display: block;
+    margin-bottom: 5px;
+}
+
+.project-detail-item .value {
+    color: #333;
+    line-height: 1.4;
+}
+
+.volunteers-list {
+    margin-top: 20px;
+}
+
+.volunteer-item {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.volunteer-info {
+    flex: 1;
+}
+
+.volunteer-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
 .alert {
     padding: 12px;
     margin-bottom: 20px;
@@ -1314,8 +1415,134 @@ function updateProjectStatus(projectId, status) {
 }
 
 function viewProject(projectId) {
-    // This could open a modal or redirect to a detailed view
-    alert('View project details for ID: ' + projectId + '\n(Feature can be expanded)');
+    document.getElementById('project-details-modal').style.display = 'block';
+    
+    // Show loading state
+    document.getElementById('project-details-content').innerHTML = '<div class="loading">Loading project details...</div>';
+    
+    // Fetch project details
+    fetch(`admin_dashboard.php?action=get_project_details&project_id=${projectId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('project-details-content').innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+                return;
+            }
+            
+            let volunteersHtml = '';
+            if (data.volunteers && data.volunteers.length > 0) {
+                volunteersHtml = '<div class="volunteers-list"><h3>Assigned Volunteers</h3>';
+                data.volunteers.forEach(volunteer => {
+                    const statusClass = volunteer.status === 'confirmed' ? 'status-badge confirmed' : 
+                                      volunteer.status === 'completed' ? 'status-badge completed' : 
+                                      'status-badge ' + volunteer.status;
+                    volunteersHtml += `
+                        <div class="volunteer-item">
+                            <div class="volunteer-info">
+                                <strong>${volunteer.name}</strong><br>
+                                <small>${volunteer.email}</small><br>
+                                <small>Assigned: ${new Date(volunteer.assigned_at).toLocaleDateString()}</small>
+                            </div>
+                            <span class="${statusClass}">${volunteer.status.charAt(0).toUpperCase() + volunteer.status.slice(1)}</span>
+                        </div>
+                    `;
+                });
+                volunteersHtml += '</div>';
+            } else {
+                volunteersHtml = '<div class="volunteers-list"><h3>Assigned Volunteers</h3><p>No volunteers assigned yet.</p></div>';
+            }
+            
+            const content = `
+                <div class="project-details-grid">
+                    <div class="project-detail-item">
+                        <label>Project ID:</label>
+                        <div class="value">${data.project_id}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Status:</label>
+                        <div class="value"><span class="status-badge ${data.status}">${data.status.charAt(0).toUpperCase() + data.status.slice(1)}</span></div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Organization:</label>
+                        <div class="value">${data.org_name || 'Guest Submission'}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Priority:</label>
+                        <div class="value">${data.priority ? data.priority.charAt(0).toUpperCase() + data.priority.slice(1) : 'Not specified'}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Start Date:</label>
+                        <div class="value">${data.start_date ? new Date(data.start_date).toLocaleDateString() : 'TBD'}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>End Date:</label>
+                        <div class="value">${data.end_date ? new Date(data.end_date).toLocaleDateString() : 'TBD'}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Start Time:</label>
+                        <div class="value">${data.start_time || 'Not specified'}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>End Time:</label>
+                        <div class="value">${data.end_time || 'Not specified'}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Location:</label>
+                        <div class="value">${data.location || 'Not specified'}</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Capacity:</label>
+                        <div class="value">${data.capacity || 'Unlimited'} volunteers</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Current Volunteers:</label>
+                        <div class="value">${data.confirmed_volunteers || 0} volunteers</div>
+                    </div>
+                    <div class="project-detail-item">
+                        <label>Created:</label>
+                        <div class="value">${new Date(data.created_at).toLocaleDateString()}</div>
+                    </div>
+                </div>
+                
+                <div class="project-detail-item">
+                    <label>Title:</label>
+                    <div class="value">${data.title}</div>
+                </div>
+                
+                ${data.description ? `
+                <div class="project-detail-item">
+                    <label>Description:</label>
+                    <div class="value">${data.description}</div>
+                </div>
+                ` : ''}
+                
+                ${data.skills_needed ? `
+                <div class="project-detail-item">
+                    <label>Skills Needed:</label>
+                    <div class="value">${data.skills_needed}</div>
+                </div>
+                ` : ''}
+                
+                ${data.requirements ? `
+                <div class="project-detail-item">
+                    <label>Requirements:</label>
+                    <div class="value">${data.requirements}</div>
+                </div>
+                ` : ''}
+                
+                ${volunteersHtml}
+            `;
+            
+            document.getElementById('project-details-content').innerHTML = content;
+        })
+        .catch(error => {
+            console.error('Error fetching project details:', error);
+            document.getElementById('project-details-content').innerHTML = '<div class="alert alert-error">Error loading project details. Please try again.</div>';
+        });
+}
+
+function closeProjectDetailsModal() {
+    document.getElementById('project-details-modal').style.display = 'none';
 }
 
 function viewAssignment(assignmentId) {
@@ -1327,12 +1554,16 @@ function viewAssignment(assignmentId) {
 window.onclick = function(event) {
     const userModal = document.getElementById('edit-user-modal');
     const orgModal = document.getElementById('edit-org-modal');
+    const projectModal = document.getElementById('project-details-modal');
     
     if (event.target === userModal) {
         closeEditUserModal();
     }
     if (event.target === orgModal) {
         closeEditOrgModal();
+    }
+    if (event.target === projectModal) {
+        closeProjectDetailsModal();
     }
 }
 
