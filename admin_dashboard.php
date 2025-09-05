@@ -10,7 +10,6 @@ $page_title = 'Admin Dashboard - Community Connect';
 $error_message = '';
 $success_message = '';
 
-// Handle AJAX requests for dynamic data
 if (isset($_GET['action']) && $_GET['action'] === 'get_stats') {
     header('Content-Type: application/json');
     
@@ -40,7 +39,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_stats') {
     exit();
 }
 
-// Handle AJAX request for project details
 if (isset($_GET['action']) && $_GET['action'] === 'get_project_details') {
     header('Content-Type: application/json');
     
