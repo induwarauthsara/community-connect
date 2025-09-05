@@ -66,165 +66,316 @@ include 'includes/header.php';
 
 <style>
     .hero {
-        background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
         color: white;
         text-align: center;
-        padding: 80px 0;
-        margin: -20px -20px 40px -20px;
-        border-radius: 0 0 20px 20px;
+        padding: 100px 0;
+        margin: -20px -20px 60px -20px;
+        border-radius: 0 0 50px 50px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><polygon points="0,100 1000,0 1000,100"/></svg>');
+        background-size: cover;
+        background-position: bottom;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 2;
     }
     
     .hero h1 {
-        font-size: 3rem;
-        margin-bottom: 20px;
-        font-weight: 700;
+        font-size: 4rem;
+        margin-bottom: 25px;
+        font-weight: 800;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        animation: bounce 3s ease-in-out infinite;
+        color: white;
     }
     
     .hero p {
-        font-size: 1.3rem;
-        margin-bottom: 30px;
-        opacity: 0.9;
+        font-size: 1.4rem;
+        margin-bottom: 40px;
+        opacity: 0.95;
+        font-weight: 300;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        color: white;
+    }
+    
+    .hero .cta-buttons {
+        display: flex;
+        gap: 25px;
+        justify-content: center;
+        margin-top: 40px;
+    }
+    
+    .hero .btn-outline {
+        background: transparent;
+        border: 3px solid white;
+        color: white;
+        font-weight: 700;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .hero .btn-outline:hover {
+        background: white;
+        color: var(--primary-blue);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
     }
     
     .stats-section {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        padding: 40px;
-        margin: 40px 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 25px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        padding: 60px 40px;
+        margin: 60px 0;
         text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .stats-section h2 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: var(--dark-blue);
+        font-weight: 700;
     }
     
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 30px;
-        margin-top: 30px;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 40px;
+        margin-top: 50px;
     }
     
     .stat-item {
-        padding: 20px;
+        padding: 30px;
+        background: white;
+        border: 3px solid var(--primary-blue);
+        border-radius: 20px;
+        color: var(--dark-blue);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-item:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0,123,255,0.05), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .stat-item:hover:before {
+        left: 100%;
+    }
+    
+    .stat-item:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 15px 40px rgba(0, 123, 255, 0.4);
+        background: var(--light-blue);
     }
     
     .stat-number {
-        font-size: 2.5rem;
-        font-weight: bold;
+        font-size: 3rem;
+        font-weight: 900;
+        margin-bottom: 15px;
         color: var(--primary-blue);
-        margin-bottom: 10px;
+        text-shadow: none;
     }
     
     .stat-label {
-        color: var(--gray);
-        font-size: 1.1rem;
+        font-size: 1.2rem;
+        font-weight: 500;
+        opacity: 0.95;
     }
     
     .projects-showcase {
-        margin: 50px 0;
+        margin: 80px 0;
+    }
+    
+    .projects-showcase h2 {
+        font-size: 2.8rem;
+        margin-bottom: 20px;
+        color: var(--dark-blue);
+        font-weight: 700;
+        text-align: center;
     }
     
     .projects-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 25px;
-        margin-top: 30px;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 30px;
+        margin-top: 50px;
     }
     
     .project-card {
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        transition: transform 0.3s, box-shadow 0.3s;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 35px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .project-card:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: var(--primary-blue);
     }
     
     .project-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 25px 60px rgba(0,0,0,0.15);
     }
     
     .project-title {
-        font-size: 1.3rem;
-        font-weight: 600;
+        font-size: 1.5rem;
+        font-weight: 700;
         color: var(--dark-blue);
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        line-height: 1.3;
     }
     
     .project-meta {
         color: var(--gray);
-        font-size: 0.9rem;
-        margin-bottom: 15px;
+        font-size: 1rem;
+        margin-bottom: 20px;
+        font-weight: 500;
     }
     
     .project-description {
         color: #555;
-        line-height: 1.6;
-        margin-bottom: 15px;
+        line-height: 1.7;
+        margin-bottom: 25px;
+        font-size: 15px;
     }
     
     .project-footer {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-top: 20px;
-        padding-top: 15px;
-        border-top: 1px solid var(--border);
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid var(--border);
     }
     
     .guest-submission {
-        background: linear-gradient(135deg, #f8f9fa, white);
-        border: 2px solid var(--border);
-        border-radius: 15px;
-        padding: 40px;
-        margin: 50px 0;
+        background: linear-gradient(135deg, #fff 80%, #e3f2fd 100%);
+        backdrop-filter: blur(20px);
+        border: 2px solid var(--primary-blue);
+        border-radius: 25px;
+        padding: 60px;
+        margin: 80px 0;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+    }
+    
+    .guest-submission h2 {
+        font-size: 2.5rem;
+        color: var(--dark-blue);
+        font-weight: 700;
+        margin-bottom: 15px;
     }
     
     .submission-form {
-        max-width: 600px;
+        max-width: 700px;
         margin: 0 auto;
     }
     
     .form-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 15px;
+        gap: 25px;
     }
     
     .cta-section {
-        background: var(--light-blue);
-        border-radius: 15px;
-        padding: 50px;
+        background: linear-gradient(135deg, #e3f2fd 60%, #fff 100%);
+        backdrop-filter: blur(20px);
+        border-radius: 25px;
+        padding: 80px 60px;
         text-align: center;
-        margin: 50px 0;
+        margin: 80px 0;
+        border: 1px solid var(--primary-blue);
+    }
+    
+    .cta-section h2 {
+        font-size: 2.8rem;
+        color: var(--dark-blue);
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+    
+    .cta-section p {
+        font-size: 1.3rem;
+        color: var(--gray);
+        margin-bottom: 40px;
+        font-weight: 400;
     }
     
     .cta-buttons {
         display: flex;
-        gap: 20px;
+        gap: 25px;
         justify-content: center;
-        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+    
+    /* Icon styles for meta information */
+    .project-meta:before {
+        content: "🌟";
+        margin-right: 8px;
     }
     
     @media (max-width: 768px) {
-        .hero h1 { font-size: 2rem; }
-        .hero p { font-size: 1.1rem; }
+        .hero h1 { font-size: 2.5rem; }
+        .hero p { font-size: 1.2rem; }
+        .hero { padding: 60px 20px; }
         .form-row { grid-template-columns: 1fr; }
         .cta-buttons { flex-direction: column; align-items: center; }
+        .stats-grid { grid-template-columns: 1fr; gap: 30px; }
+        .projects-grid { grid-template-columns: 1fr; }
+        .cta-section { padding: 50px 30px; }
+        .guest-submission { padding: 40px 30px; }
     }
 </style>
 
 <!-- Hero Section -->
 <section class="hero">
-    <h1>Community Connect</h1>
-    <p>Building stronger communities through volunteer coordination</p>
-    <div class="cta-buttons">
-        <a href="signup.php" class="btn btn-outline">Join as Volunteer</a>
-        <a href="login.php" class="btn btn-outline">Login</a>
+    <div class="hero-content">
+        <h1>Community Connect</h1>
+        <p>Building stronger communities through volunteer coordination</p>
+        <div class="cta-buttons">
+            <a href="signup.php" class="btn btn-outline pulse">Join as Volunteer</a>
+            <a href="login.php" class="btn btn-outline">Login</a>
+        </div>
     </div>
 </section>
 
 <!-- Statistics Section -->
-<section class="stats-section">
+<section class="stats-section slide-in-left">
     <h2>Making an Impact Together</h2>
+    <p class="text-muted">Join thousands of volunteers making a difference in communities worldwide</p>
     <div class="stats-grid">
         <div class="stat-item">
             <div class="stat-number"><?php echo $stats['total_projects']; ?></div>
@@ -242,13 +393,14 @@ include 'includes/header.php';
 </section>
 
 <!-- Projects Showcase -->
-<section class="projects-showcase">
-    <h2 class="text-center">Current Volunteer Opportunities</h2>
+<section class="projects-showcase slide-in-right">
+    <h2>Current Volunteer Opportunities</h2>
+    <p class="text-center text-muted">Discover amazing projects where you can make a real difference</p>
     
     <?php if (mysqli_num_rows($projects_result) > 0): ?>
         <div class="projects-grid">
             <?php while ($project = mysqli_fetch_assoc($projects_result)): ?>
-                <div class="project-card">
+                <div class="project-card fade-in">
                     <h3 class="project-title"><?php echo htmlspecialchars($project['title']); ?></h3>
                     <div class="project-meta">
                         📍 <?php echo htmlspecialchars($project['location']); ?> • 
@@ -331,21 +483,21 @@ include 'includes/header.php';
         </div>
         
         <div class="text-center">
-            <button type="submit" name="submit_project" class="btn btn-primary" 
+            <button type="submit" name="submit_project" class="btn btn-primary pulse" 
                     onclick="return confirm('Submit this project for review?')">
-                Submit Project for Review
+                🚀 Submit Project for Review
             </button>
         </div>
     </form>
 </section>
 
 <!-- Call to Action -->
-<section class="cta-section">
+<section class="cta-section fade-in">
     <h2>Ready to Make a Difference?</h2>
     <p>Join our community of volunteers and organizations working together to create positive change.</p>
     <div class="cta-buttons">
-        <a href="signup.php" class="btn btn-primary">Sign Up Now</a>
-        <a href="help.php" class="btn btn-secondary">Learn More</a>
+        <a href="signup.php" class="btn btn-primary bounce">🌟 Sign Up Now</a>
+        <a href="help.php" class="btn btn-secondary">📚 Learn More</a>
     </div>
 </section>
 

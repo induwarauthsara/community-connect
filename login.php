@@ -66,53 +66,86 @@ include 'includes/header.php';
 
 <style>
     .login-container {
-        max-width: 400px;
-        margin: 50px auto;
+        max-width: 450px;
+        margin: 80px auto;
         padding: 0 20px;
     }
     
     .login-card {
-        background: white;
-        border-radius: 15px;
-        padding: 40px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 25px;
+        padding: 50px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
         text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .login-card:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, var(--primary-blue), var(--dark-blue));
+        border-radius: 25px 25px 0 0;
     }
     
     .login-logo {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 20px;
+        width: 90px;
+        height: 90px;
+        margin: 0 auto 25px;
         border-radius: 50%;
+        border: 3px solid var(--primary-blue);
+        padding: 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .login-logo:hover {
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
     }
     
     .login-title {
         color: var(--dark-blue);
-        margin-bottom: 10px;
-        font-size: 1.8rem;
+        margin-bottom: 15px;
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(45deg, var(--primary-blue), var(--dark-blue));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
     
     .login-subtitle {
         color: var(--gray);
-        margin-bottom: 30px;
+        margin-bottom: 40px;
+        font-size: 1.1rem;
+        font-weight: 400;
     }
     
     .form-group {
         text-align: left;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
     }
     
     .login-btn {
         width: 100%;
-        padding: 12px;
-        margin-bottom: 20px;
+        padding: 16px;
+        margin-bottom: 25px;
+        font-size: 16px;
+        font-weight: 600;
     }
     
     .divider {
-        margin: 30px 0;
+        margin: 40px 0;
         text-align: center;
         position: relative;
         color: var(--gray);
+        font-weight: 500;
     }
     
     .divider::before {
@@ -121,28 +154,45 @@ include 'includes/header.php';
         top: 50%;
         left: 0;
         right: 0;
-        height: 1px;
-        background: var(--border);
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
     }
     
     .divider span {
         background: white;
-        padding: 0 15px;
+        padding: 0 20px;
+        position: relative;
+        z-index: 1;
     }
     
     .signup-link {
         color: var(--primary-blue);
         text-decoration: none;
-        font-weight: 500;
+        font-weight: 600;
+        transition: all 0.3s ease;
     }
     
     .signup-link:hover {
         text-decoration: underline;
+        color: var(--dark-blue);
+        transform: translateY(-1px);
+    }
+    
+    .back-link {
+        color: var(--gray);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .back-link:hover {
+        color: var(--primary-blue);
+        transform: translateX(-3px);
     }
 </style>
 
-<div class="login-container">
-    <div class="login-card">
+<div class="login-container fade-in">
+    <div class="login-card slide-in-left">
         <img src="assets/images/logo.png" alt="Community Connect Logo" class="login-logo">
         <h1 class="login-title">Welcome Back</h1>
         <p class="login-subtitle">Sign in to your account</p>
@@ -167,8 +217,8 @@ include 'includes/header.php';
                        placeholder="Enter your password">
             </div>
 
-            <button type="submit" class="btn btn-primary login-btn">
-                Sign In
+            <button type="submit" class="btn btn-primary login-btn pulse">
+                🚀 Sign In
             </button>
         </form>
 
@@ -182,7 +232,7 @@ include 'includes/header.php';
         </p>
         
         <p class="mt-3">
-            <a href="index.php" class="text-muted">← Back to Home</a>
+            <a href="index.php" class="back-link">← Back to Home</a>
         </p>
     </div>
 </div>
