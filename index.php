@@ -109,6 +109,20 @@ include 'includes/header.php';
         color: white;
     }
     
+    .hero .welcome-message {
+        font-size: 3.5rem;
+        margin-bottom: 25px;
+        font-weight: 800;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        color: white;
+        animation: fadeInUp 1s ease-out;
+    }
+    
+    .hero .user-name {
+        color: #FFD700;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    }
+    
     .hero p {
         font-size: 1.4rem;
         margin-bottom: 40px;
@@ -356,6 +370,7 @@ include 'includes/header.php';
     
     @media (max-width: 768px) {
         .hero h1 { font-size: 2.5rem; }
+        .hero .welcome-message { font-size: 2.2rem; }
         .hero p { font-size: 1.2rem; }
         .hero { padding: 60px 20px; }
         .form-row { grid-template-columns: 1fr; }
@@ -365,17 +380,49 @@ include 'includes/header.php';
         .cta-section { padding: 50px 30px; }
         .guest-submission { padding: 40px 30px; }
     }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 <!-- Hero Section -->
 <section class="hero">
     <div class="hero-content">
-        <h1>Community Connect</h1>
-        <p>Building stronger communities through volunteer coordination</p>
-        <div class="cta-buttons">
-            <a href="signup.php" class="btn btn-outline pulse">Join as Volunteer</a>
-            <a href="login.php" class="btn btn-outline">Login</a>
-        </div>
+        <?php if (isLoggedIn()): ?>
+            <?php 
+            $current_user = getCurrentUser();
+            $user_name = htmlspecialchars($current_user['name'] ?? 'User');
+            ?>
+            <h1>Welcome back, <?php echo $user_name; ?>!</h1>
+            <p>Ready to make a difference in your community today?</p>
+            <div class="cta-buttons">
+                <?php if ($current_user['role'] === 'admin'): ?>
+                    <a href="admin_dashboard.php" class="btn btn-outline pulse">Go to Dashboard</a>
+                    <a href="browse_projects.php" class="btn btn-outline">Browse Projects</a>
+                <?php elseif ($current_user['role'] === 'organization'): ?>
+                    <a href="organization_dashboard.php" class="btn btn-outline pulse">Manage Projects</a>
+                    <a href="browse_projects.php" class="btn btn-outline">Browse Projects</a>
+                <?php elseif ($current_user['role'] === 'volunteer'): ?>
+                    <a href="volunteer_dashboard.php" class="btn btn-outline pulse">My Dashboard</a>
+                    <a href="browse_projects.php" class="btn btn-outline">Find Projects</a>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <h1>Community Connect</h1>
+            <p>Building stronger communities through volunteer coordination</p>
+            <div class="cta-buttons">
+                <a href="signup.php" class="btn btn-outline pulse">Join as Volunteer</a>
+                <a href="login.php" class="btn btn-outline">Login</a>
+            </div>
+        <?php endif; ?>
     </div>
 </section>
 
