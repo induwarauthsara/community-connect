@@ -41,9 +41,20 @@
             forms.forEach(form => {
                 form.addEventListener('submit', function(e) {
                     const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn) {
-                        submitBtn.innerHTML = '<div class="spinner"></div> Processing...';
-                        submitBtn.disabled = true;
+                    if (submitBtn && !submitBtn.disabled) {
+                        // Add a loading class instead of changing innerHTML
+                        submitBtn.classList.add('loading');
+                        
+                        // Don't disable immediately - let form submit first
+                        setTimeout(() => {
+                            submitBtn.disabled = true;
+                        }, 100);
+                        
+                        // Re-enable after a delay to prevent stuck state
+                        setTimeout(() => {
+                            submitBtn.classList.remove('loading');
+                            submitBtn.disabled = false;
+                        }, 3000);
                     }
                 });
             });
@@ -128,6 +139,31 @@
                     transform: scale(4);
                     opacity: 0;
                 }
+            }
+            
+            .btn.loading {
+                opacity: 0.7;
+                cursor: not-allowed;
+                position: relative;
+            }
+            
+            .btn.loading:after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                margin-left: -10px;
+                margin-top: -10px;
+                width: 20px;
+                height: 20px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top-color: white;
+                animation: spin 1s ease-in-out infinite;
+            }
+            
+            @keyframes spin {
+                to { transform: rotate(360deg); }
             }
         `;
         document.head.appendChild(style);

@@ -24,16 +24,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_project'])) {
         $end_date = mysqli_real_escape_string($connection, $end_date);
         
         $sql = "INSERT INTO projects (title, description, location, start_date, end_date, capacity, created_by, status) 
-                VALUES ('$title', '$description', '$location', '$start_date', '$end_date', $capacity, 0, 'pending')";
+                VALUES ('$title', '$description', '$location', '$start_date', '$end_date', $capacity, NULL, 'pending')";
         
         if (mysqli_query($connection, $sql)) {
-            $message = "Thank you! Your project has been submitted for admin review.";
+            // Redirect to prevent double submission on refresh (Post-Redirect-Get pattern)
+            header('Location: index.php?success=1');
+            exit();
         } else {
-            $error = "Failed to submit project. Please try again.";
+            $error = "Failed to submit project. Error: " . mysqli_error($connection);
         }
     } else {
         $error = "Please fill in all required fields.";
     }
+}
+
+// Handle success message from redirect
+if (isset($_GET['success']) && $_GET['success'] == '1') {
+    $message = "Thank you! Your project has been submitted for admin review.";
 }
 
 // Get approved projects for showcase
@@ -483,8 +490,7 @@ include 'includes/header.php';
         </div>
         
         <div class="text-center">
-            <button type="submit" name="submit_project" class="btn btn-primary pulse" 
-                    onclick="return confirm('Submit this project for review?')">
+            <button type="submit" name="submit_project" class="btn btn-primary pulse">
                 🚀 Submit Project for Review
             </button>
         </div>

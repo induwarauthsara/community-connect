@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ($action) {
         case 'create_user':
             $name = mysqli_real_escape_string($connection, trim($_POST['name'] ?? ''));
+            $username = mysqli_real_escape_string($connection, trim($_POST['username'] ?? ''));
             $email = mysqli_real_escape_string($connection, trim($_POST['email'] ?? ''));
             $password = mysqli_real_escape_string($connection, trim($_POST['password'] ?? ''));
             $role = mysqli_real_escape_string($connection, trim($_POST['role'] ?? ''));
@@ -58,23 +59,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $address = mysqli_real_escape_string($connection, trim($_POST['address'] ?? ''));
             $organization_id = !empty($_POST['organization_id']) ? (int)$_POST['organization_id'] : null;
             
-            if (empty($name) || empty($email) || empty($password) || empty($role)) {
+            if (empty($name) || empty($username) || empty($email) || empty($password) || empty($role)) {
                 $error_message = 'All required fields must be filled.';
             } else {
-                // Check if email already exists
-                $check_email = mysqli_query($connection, "SELECT user_id FROM users WHERE email = '$email'");
-                if (mysqli_num_rows($check_email) > 0) {
-                    $error_message = 'Email already exists.';
+                // Check if username already exists
+                $check_username = mysqli_query($connection, "SELECT user_id FROM users WHERE username = '$username'");
+                if (mysqli_num_rows($check_username) > 0) {
+                    $error_message = 'Username already exists.';
                 } else {
-                    $org_clause = $organization_id ? ", organization_id = $organization_id" : "";
-                    $sql = "INSERT INTO users (name, email, password, role, phone, address$org_clause, is_active, email_verified) 
-                            VALUES ('$name', '$email', '$password', '$role', '$phone', '$address'" . 
-                           ($organization_id ? ", $organization_id" : "") . ", 1, 1)";
-                    
-                    if (mysqli_query($connection, $sql)) {
-                        $success_message = 'User created successfully.';
+                    // Check if email already exists
+                    $check_email = mysqli_query($connection, "SELECT user_id FROM users WHERE email = '$email'");
+                    if (mysqli_num_rows($check_email) > 0) {
+                        $error_message = 'Email already exists.';
                     } else {
-                        $error_message = 'Error creating user: ' . mysqli_error($connection);
+                        $org_clause = $organization_id ? ", organization_id = $organization_id" : "";
+                        $sql = "INSERT INTO users (name, username, email, password, role, phone, address$org_clause, is_active, email_verified) 
+                                VALUES ('$name', '$username', '$email', '$password', '$role', '$phone', '$address'" . 
+                               ($organization_id ? ", $organization_id" : "") . ", 1, 1)";
+                        
+                        if (mysqli_query($connection, $sql)) {
+                            $success_message = 'User created successfully.';
+                        } else {
+                            $error_message = 'Error creating user: ' . mysqli_error($connection);
+                        }
                     }
                 }
             }
@@ -83,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'update_user':
             $user_id = (int)$_POST['user_id'];
             $name = mysqli_real_escape_string($connection, trim($_POST['name'] ?? ''));
+            $username = mysqli_real_escape_string($connection, trim($_POST['username'] ?? ''));
             $email = mysqli_real_escape_string($connection, trim($_POST['email'] ?? ''));
             $role = mysqli_real_escape_string($connection, trim($_POST['role'] ?? ''));
             $phone = mysqli_real_escape_string($connection, trim($_POST['phone'] ?? ''));
@@ -90,18 +98,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $is_active = isset($_POST['is_active']) ? 1 : 0;
             $organization_id = !empty($_POST['organization_id']) ? (int)$_POST['organization_id'] : null;
             
-            if (empty($name) || empty($email) || empty($role)) {
+            if (empty($name) || empty($username) || empty($email) || empty($role)) {
                 $error_message = 'All required fields must be filled.';
             } else {
-                $org_clause = $organization_id ? "organization_id = $organization_id" : "organization_id = NULL";
-                $sql = "UPDATE users SET name = '$name', email = '$email', role = '$role', 
-                        phone = '$phone', address = '$address', is_active = $is_active, $org_clause 
-                        WHERE user_id = $user_id";
-                
-                if (mysqli_query($connection, $sql)) {
-                    $success_message = 'User updated successfully.';
+                // Check if username already exists for other users
+                $check_username = mysqli_query($connection, "SELECT user_id FROM users WHERE username = '$username' AND user_id != $user_id");
+                if (mysqli_num_rows($check_username) > 0) {
+                    $error_message = 'Username already exists.';
                 } else {
-                    $error_message = 'Error updating user: ' . mysqli_error($connection);
+                    // Check if email already exists for other users
+                    $check_email = mysqli_query($connection, "SELECT user_id FROM users WHERE email = '$email' AND user_id != $user_id");
+                    if (mysqli_num_rows($check_email) > 0) {
+                        $error_message = 'Email already exists.';
+                    } else {
+                        $org_clause = $organization_id ? "organization_id = $organization_id" : "organization_id = NULL";
+                        $sql = "UPDATE users SET name = '$name', username = '$username', email = '$email', role = '$role', 
+                                phone = '$phone', address = '$address', is_active = $is_active, $org_clause 
+                                WHERE user_id = $user_id";
+                        
+                        if (mysqli_query($connection, $sql)) {
+                            $success_message = 'User updated successfully.';
+                        } else {
+                            $error_message = 'Error updating user: ' . mysqli_error($connection);
+                        }
+                    }
                 }
             }
             break;
@@ -200,6 +220,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error_message = 'Error deleting project: ' . mysqli_error($connection);
             }
             break;
+            
+        case 'create_project':
+            $title = mysqli_real_escape_string($connection, trim($_POST['title'] ?? ''));
+            $description = mysqli_real_escape_string($connection, trim($_POST['description'] ?? ''));
+            $location = mysqli_real_escape_string($connection, trim($_POST['location'] ?? ''));
+            $start_date = trim($_POST['start_date'] ?? '');
+            $end_date = trim($_POST['end_date'] ?? '');
+            $start_time = trim($_POST['start_time'] ?? '');
+            $end_time = trim($_POST['end_time'] ?? '');
+            $capacity = !empty($_POST['capacity']) ? (int)$_POST['capacity'] : null;
+            $skills_needed = mysqli_real_escape_string($connection, trim($_POST['skills_needed'] ?? ''));
+            $requirements = mysqli_real_escape_string($connection, trim($_POST['requirements'] ?? ''));
+            $priority = mysqli_real_escape_string($connection, trim($_POST['priority'] ?? 'medium'));
+            $organization_id = !empty($_POST['organization_id']) ? (int)$_POST['organization_id'] : null;
+            
+            if (empty($title)) {
+                $error_message = 'Project title is required.';
+            } else {
+                $start_date_value = !empty($start_date) ? "'$start_date'" : 'NULL';
+                $end_date_value = !empty($end_date) ? "'$end_date'" : 'NULL';
+                $start_time_value = !empty($start_time) ? "'$start_time'" : 'NULL';
+                $end_time_value = !empty($end_time) ? "'$end_time'" : 'NULL';
+                $capacity_value = $capacity ? $capacity : 'NULL';
+                $org_value = $organization_id ? $organization_id : 'NULL';
+                
+                $sql = "INSERT INTO projects (title, description, location, start_date, end_date, start_time, end_time, 
+                        capacity, skills_needed, requirements, priority, organization_id, created_by, status) 
+                        VALUES ('$title', '$description', '$location', $start_date_value, $end_date_value, 
+                        $start_time_value, $end_time_value, $capacity_value, '$skills_needed', '$requirements', 
+                        '$priority', $org_value, {$current_user['user_id']}, 'approved')";
+                
+                if (mysqli_query($connection, $sql)) {
+                    $success_message = 'Project created successfully.';
+                } else {
+                    $error_message = 'Error creating project: ' . mysqli_error($connection);
+                }
+            }
+            break;
     }
 }
 
@@ -273,6 +331,10 @@ include 'includes/header.php';
                         <input type="text" id="name" name="name" required>
                     </div>
                     <div class="form-group">
+                        <label for="username">Username *</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
                         <label for="email">Email *</label>
                         <input type="email" id="email" name="email" required>
                     </div>
@@ -324,6 +386,7 @@ include 'includes/header.php';
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Username</th>
                         <th>Email</th>
                         <th>Role</th>
                         <th>Organization</th>
@@ -343,6 +406,7 @@ include 'includes/header.php';
                     <tr>
                         <td><?php echo $user['user_id']; ?></td>
                         <td><?php echo htmlspecialchars($user['name']); ?></td>
+                        <td><?php echo htmlspecialchars($user['username']); ?></td>
                         <td><?php echo htmlspecialchars($user['email']); ?></td>
                         <td><span class="role-badge role-<?php echo $user['role']; ?>"><?php echo ucfirst($user['role']); ?></span></td>
                         <td><?php echo htmlspecialchars($user['org_name'] ?? 'None'); ?></td>
@@ -449,6 +513,81 @@ include 'includes/header.php';
     <div id="projects-tab" class="tab-content">
         <div class="section-header">
             <h2>Project Management</h2>
+            <button class="btn btn-primary" onclick="showCreateProjectForm()">Create New Project</button>
+        </div>
+        
+        <!-- Create Project Form (Initially Hidden) -->
+        <div id="create-project-form" class="form-container" style="display: none;">
+            <h3>Create New Project</h3>
+            <form method="POST" onsubmit="return confirmCreate()">
+                <input type="hidden" name="action" value="create_project">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="project-title">Title *</label>
+                        <input type="text" id="project-title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="project-location">Location</label>
+                        <input type="text" id="project-location" name="location">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-start-date">Start Date</label>
+                        <input type="date" id="project-start-date" name="start_date">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-end-date">End Date</label>
+                        <input type="date" id="project-end-date" name="end_date">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-start-time">Start Time</label>
+                        <input type="time" id="project-start-time" name="start_time">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-end-time">End Time</label>
+                        <input type="time" id="project-end-time" name="end_time">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-capacity">Capacity</label>
+                        <input type="number" id="project-capacity" name="capacity" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-priority">Priority</label>
+                        <select id="project-priority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="project-organization-id">Organization</label>
+                        <select id="project-organization-id" name="organization_id">
+                            <option value="">None (Admin Project)</option>
+                            <?php
+                            $orgs = mysqli_query($connection, "SELECT org_id, name FROM organizations ORDER BY name");
+                            while ($org = mysqli_fetch_assoc($orgs)) {
+                                echo "<option value='{$org['org_id']}'>" . htmlspecialchars($org['name']) . "</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="project-skills-needed">Skills Needed</label>
+                    <textarea id="project-skills-needed" name="skills_needed" rows="2" placeholder="e.g., Communication, Teamwork, Computer Skills"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="project-requirements">Requirements</label>
+                    <textarea id="project-requirements" name="requirements" rows="2" placeholder="Special requirements or qualifications"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="project-description">Description</label>
+                    <textarea id="project-description" name="description" rows="4" placeholder="Describe the project goals, activities, and requirements..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateProjectForm()">Cancel</button>
+                </div>
+            </form>
         </div>
         
         <div class="table-container">
@@ -657,6 +796,10 @@ include 'includes/header.php';
                     <input type="text" id="edit-name" name="name" required>
                 </div>
                 <div class="form-group">
+                    <label for="edit-username">Username *</label>
+                    <input type="text" id="edit-username" name="username" required>
+                </div>
+                <div class="form-group">
                     <label for="edit-email">Email *</label>
                     <input type="email" id="edit-email" name="email" required>
                 </div>
@@ -811,13 +954,17 @@ include 'includes/header.php';
 
 .section-header {
     display: flex;
-    justify-content: between;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
 }
 
 .section-header h2 {
     margin: 0;
+}
+
+.section-header .btn {
+    padding-left: 24px;
 }
 
 .form-container {
@@ -1108,10 +1255,20 @@ function hideCreateOrgForm() {
     document.getElementById('create-org-form').style.display = 'none';
 }
 
+// Create project form functions
+function showCreateProjectForm() {
+    document.getElementById('create-project-form').style.display = 'block';
+}
+
+function hideCreateProjectForm() {
+    document.getElementById('create-project-form').style.display = 'none';
+}
+
 // Edit user modal functions
 function editUser(user) {
     document.getElementById('edit-user-id').value = user.user_id;
     document.getElementById('edit-name').value = user.name;
+    document.getElementById('edit-username').value = user.username || '';
     document.getElementById('edit-email').value = user.email;
     document.getElementById('edit-role').value = user.role;
     document.getElementById('edit-phone').value = user.phone || '';
