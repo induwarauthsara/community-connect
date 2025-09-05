@@ -79,8 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ### Database Setup
 Run `setup_database.php` to initialize complete schema and default admin user:
-- Email: `admin@communityconnect.com`
-- Password: `admin123` (plain text)
+- Username: `ucsc`
+- Password: `ucsc` (plain text)
 
 ### Adding New Features
 1. Always include `config/database.php` and `includes/common.php`
