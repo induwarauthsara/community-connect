@@ -4,6 +4,10 @@
 $host = 'localhost';
 $username = 'root';   // Change this to your MySQL username
 $password = '';       // Change this to your MySQL password
+// Database configuration
+$host = 'localhost';
+$username = 'root';   // Change this to your MySQL username
+$password = '';       // Change this to your MySQL password
 $database = 'community_connect';
 
 // 1) Connect to MySQL server (without choosing a database)
@@ -37,9 +41,9 @@ function databaseExists($host, $username, $password, $database) {
     return $exists;
 }
 
-// SQL statements for creating tables
+// SQL statements for creating tables with all constraints included
 $tables = [
-    // Organizations table
+    // Organizations table (created first since users references it)
     'organizations' => "
         CREATE TABLE IF NOT EXISTS organizations (
             org_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,14 +51,17 @@ $tables = [
             description TEXT,
             contact_email VARCHAR(100),
             contact_phone VARCHAR(20),
+            website VARCHAR(255),
             address TEXT,
+            mission TEXT,
+            established_year YEAR,
             created_by INT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
     
-    // Users table
+    // Users table (references organizations)
     'users' => "
         CREATE TABLE IF NOT EXISTS users (
             user_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -77,6 +84,13 @@ $tables = [
             INDEX idx_role (role),
             FOREIGN KEY (organization_id) REFERENCES organizations(org_id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ",
+    
+    // Add foreign key to organizations table after users is created
+    'organizations_fk' => "
+        ALTER TABLE organizations 
+        ADD CONSTRAINT fk_org_created_by 
+        FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE
     ",
     
     // Projects table (also stores guest submissions as pending)
@@ -133,9 +147,8 @@ $tables = [
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ",
     
-    // Removed: project_suggestions and announcements (feature deprecated)
-    
-    // (Activity logs removed)
+    // All tables include complete schema with foreign keys and indexes
+    // (Activity logs and other deprecated features removed)
 ];
 
 // Create the database and all tables
@@ -156,28 +169,18 @@ function createStructure($host, $username, $password, $database, $tables) {
     // Step C: Create tables
     $success_count = 0;
     $total_tables = count($tables);
-    echo "<h2>Creating Tables</h2>";
+    echo "<h2>Creating Tables and Constraints</h2>";
     foreach ($tables as $table_name => $sql) {
         if (mysqli_query($connection, $sql)) {
-            echo "Table '$table_name' OK.<br>";
+            echo "Table/Constraint '$table_name' OK.<br>";
             $success_count++;
         } else {
-            echo "Error creating table '$table_name': " . mysqli_error($connection) . "<br>";
+            echo "Error creating table/constraint '$table_name': " . mysqli_error($connection) . "<br>";
         }
     }
     echo "<br>";
 
-    // Step D: Add a foreign key (simple attempt; if it already exists, we just show a note)
-    echo "<h2>Adding Foreign Key</h2>";
-    $fk_sql = "ALTER TABLE organizations ADD CONSTRAINT fk_org_created_by 
-               FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE";
-    if (mysqli_query($connection, $fk_sql)) {
-        echo "Foreign key added.<br>";
-    } else {
-        echo "Note: " . htmlspecialchars(mysqli_error($connection)) . "<br>";
-    }
-
-    // Step E: Make sure a default admin exists
+    // Step D: Make sure a default admin exists
     echo "<br><h2>Default Admin User</h2>";
     $check_admin_sql = "SELECT COUNT(*) as count FROM users WHERE role = 'admin'";
     $result = mysqli_query($connection, $check_admin_sql);
