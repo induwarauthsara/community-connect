@@ -87,7 +87,7 @@ main {
 /* Header Styles */
 
 .header {
-    background: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
     backdrop-filter: blur(20px);
     color: white;
     padding: 1.5rem 0;
