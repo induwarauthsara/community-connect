@@ -39,8 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 
                 if (!$project) {
                     $error = 'This project is not available for joining.';
-                } elseif ($project['max_volunteers'] && (int)$project['current_volunteers'] >= (int)$project['max_volunteers']) {
-                    $error = 'This project has reached its maximum number of volunteers (' . $project['max_volunteers'] . ').';
+                } elseif ($project['capacity'] && (int)$project['current_volunteers'] >= (int)$project['capacity']) {
+                    $error = 'This project has reached its maximum number of volunteers (' . $project['capacity'] . ').';
                 } elseif ($project['end_date'] && strtotime($project['end_date']) < time()) {
                     $error = 'This project has already ended.';
                 } else {
@@ -83,7 +83,7 @@ $show_full = isset($_GET['show_full']) && $_GET['show_full'] === '1';
 
 // Build query for approved projects
 $sql = "
-    SELECT p.*, o.name as org_name, o.contact_email, o.website,
+    SELECT p.*, o.name as org_name, o.contact_email,
            (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) as volunteer_count
     FROM projects p
     JOIN organizations o ON p.organization_id = o.org_id
@@ -113,7 +113,7 @@ if ($filter_skills) {
 
 // Filter out full projects unless specifically requested
 if (!$show_full) {
-    $sql .= " AND (p.max_volunteers IS NULL OR (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) < p.max_volunteers)";
+    $sql .= " AND (p.capacity IS NULL OR (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) < p.capacity)";
 }
 
 // Filter out ended projects
@@ -173,7 +173,10 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
                   'Fundraising', 'Marketing', 'Photography', 'Writing', 'Childcare', 
                   'Elderly Care', 'Environmental', 'Construction', 'Art', 'Music'];
 
-<?php if ($success): ?>
+$page_title = 'Browse Projects - Community Connect';
+include 'includes/header.php';
+
+if ($success): ?>
     <div class="success"><?php echo $success; ?></div>
 <?php endif; ?>
 
@@ -311,7 +314,7 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
     <!-- Enhanced Project Cards -->
     <?php foreach ($projects as $index => $project): ?>
     <?php 
-    $is_full = $project['max_volunteers'] && (int)$project['volunteer_count'] >= (int)$project['max_volunteers'];
+    $is_full = $project['capacity'] && (int)$project['volunteer_count'] >= (int)$project['capacity'];
     $is_ending_soon = $project['end_date'] && strtotime($project['end_date']) <= strtotime('+30 days');
     $is_new = strtotime($project['created_at']) >= strtotime('-7 days');
     ?>
@@ -346,10 +349,10 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
             <div class="info-item">
                 <strong>📊 Team Status:</strong><br>
                 <?php echo (int)$project['volunteer_count']; ?> volunteer<?php echo (int)$project['volunteer_count'] !== 1 ? 's' : ''; ?>
-                <?php if ($project['max_volunteers']): ?>
-                    / <?php echo (int)$project['max_volunteers']; ?> max
+                <?php if ($project['capacity']): ?>
+                    / <?php echo (int)$project['capacity']; ?> max
                     <?php 
-                    $percentage = ((int)$project['volunteer_count'] / (int)$project['max_volunteers']) * 100;
+                    $percentage = ((int)$project['volunteer_count'] / (int)$project['capacity']) * 100;
                     $color = $percentage >= 90 ? '#dc3545' : ($percentage >= 70 ? '#ffc107' : '#28a745');
                     ?>
                     <div style="width: 100%; height: 6px; background: #e9ecef; border-radius: 3px; margin-top: 3px;">
@@ -393,11 +396,6 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
                 <?php else: ?>
                     <span style="color: #666; font-size: 12px;">Contact via project</span>
                 <?php endif; ?>
-                <?php if ($project['website']): ?>
-                    <br><a href="<?php echo htmlspecialchars($project['website']); ?>" target="_blank" rel="noopener" style="font-size: 12px;">
-                        🌐 Website
-                    </a>
-                <?php endif; ?>
             </div>
         </div>
         
@@ -415,7 +413,7 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
                 <?php if ($is_full): ?>
                     <div style="text-align: center; color: #dc3545;">
                         <strong>❌ Project is Full</strong>
-                        <p style="font-size: 13px; margin: 5px 0;">This project has reached its maximum number of volunteers (<?php echo $project['max_volunteers']; ?>).</p>
+                        <p style="font-size: 13px; margin: 5px 0;">This project has reached its maximum number of volunteers (<?php echo $project['capacity']; ?>).</p>
                         <?php if ($project['contact_email']): ?>
                             <p style="font-size: 12px; color: #666;">You can still <a href="mailto:<?php echo htmlspecialchars($project['contact_email']); ?>">contact the organization</a> to ask about future opportunities.</p>
                         <?php endif; ?>
@@ -440,8 +438,8 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
                         </div>
                         
                         <div style="text-align: right; color: #666; font-size: 12px;">
-                            <?php if ($project['max_volunteers']): ?>
-                                <?php $spots_left = (int)$project['max_volunteers'] - (int)$project['volunteer_count']; ?>
+                            <?php if ($project['capacity']): ?>
+                                <?php $spots_left = (int)$project['capacity'] - (int)$project['volunteer_count']; ?>
                                 <span style="color: <?php echo $spots_left <= 2 ? '#dc3545' : '#666'; ?>;">
                                     <?php echo $spots_left; ?> spot<?php echo $spots_left !== 1 ? 's' : ''; ?> remaining
                                 </span>
@@ -490,66 +488,9 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
         <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 4px; font-size: 12px; color: #666;">
             <strong>Important:</strong> When you join a project, you automatically become part of that organization. 
             You can only be associated with one organization at a time. To switch organizations, 
-            you must leave your current organization first from your <a href="volunteer_dashboard_new.php">volunteer dashboard</a>.
+            you must leave your current organization first from your <a href="volunteer_dashboard.php">volunteer dashboard</a>.
         </div>
     </div>
-<?php endif; ?>
-
-<?php include 'includes/footer.php'; ?>
-
-<?php if ($success): ?>
-    <div class="success"><?php echo htmlspecialchars($success); ?></div>
-<?php endif; ?>
-
-<?php if ($error): ?>
-    <div class="error"><?php echo htmlspecialchars($error); ?></div>
-<?php endif; ?>
-
-<div class="card">
-    <h2>Available Projects</h2>
-    <p>Browse approved volunteer opportunities from organizations.</p>
-</div>
-
-<?php if (empty($projects)): ?>
-    <div class="card">
-        <p>No projects available at the moment. Check back later!</p>
-    </div>
-<?php else: ?>
-    <?php foreach ($projects as $project): ?>
-    <div class="card">
-        <h3><?php echo htmlspecialchars($project['title']); ?></h3>
-        <p><strong>Organization:</strong> <?php echo htmlspecialchars($project['org_name']); ?></p>
-        
-        <?php if ($project['description']): ?>
-            <p><strong>Description:</strong> <?php echo htmlspecialchars($project['description']); ?></p>
-        <?php endif; ?>
-        
-        <?php if ($project['location']): ?>
-            <p><strong>Location:</strong> <?php echo htmlspecialchars($project['location']); ?></p>
-        <?php endif; ?>
-        
-        <?php if ($project['start_date']): ?>
-            <p><strong>Start Date:</strong> <?php echo htmlspecialchars(date('M j, Y', strtotime($project['start_date']))); ?></p>
-        <?php endif; ?>
-        
-        <?php if ($project['end_date']): ?>
-            <p><strong>End Date:</strong> <?php echo htmlspecialchars(date('M j, Y', strtotime($project['end_date']))); ?></p>
-        <?php endif; ?>
-        
-        <p><strong>Current Volunteers:</strong> <?php echo (int)$project['volunteer_count']; ?></p>
-        
-        <?php if ($user_id && $user_role === 'volunteer'): ?>
-            <form method="POST" onsubmit="return confirmJoin(this)">
-                <input type="hidden" name="action" value="join_project">
-                <input type="hidden" name="project_id" value="<?php echo $project['project_id']; ?>">
-                <input type="hidden" name="confirmed" value="false">
-                <button type="submit" class="btn btn-success">Join Project</button>
-            </form>
-        <?php else: ?>
-            <p><em>Login as a volunteer to join projects.</em></p>
-        <?php endif; ?>
-    </div>
-    <?php endforeach; ?>
 <?php endif; ?>
 
 <?php include 'includes/footer.php'; ?>
