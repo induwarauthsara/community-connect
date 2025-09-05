@@ -27,17 +27,14 @@ $error_message = '';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
+    $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if (empty($email) || empty($password)) {
+    if (empty($username) || empty($password)) {
         $error_message = 'Please fill in all required fields.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error_message = 'Please enter a valid email address.';
     } else {
-        // Simple database query without password hashing
-        $email = mysqli_real_escape_string($connection, $email);
-        $result = mysqli_query($connection, "SELECT * FROM users WHERE email = '$email'");
+        $username = mysqli_real_escape_string($connection, $username);
+        $result = mysqli_query($connection, "SELECT * FROM users WHERE username = '$username'");
         $user = mysqli_fetch_assoc($result);
         
         if ($user && $user['password'] === $password) {
@@ -56,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             exit();
         } else {
-            $error_message = 'Invalid email or password.';
+            $error_message = 'Invalid username or password.';
         }
     }
 }
@@ -205,10 +202,10 @@ include 'includes/header.php';
 
         <form method="POST" action="login.php">
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" class="form-control" required
-                       value="<?php echo isset($email) ? htmlspecialchars($email) : ''; ?>"
-                       placeholder="Enter your email">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" required
+                       value="<?php echo isset($username) ? htmlspecialchars($username) : ''; ?>"
+                       placeholder="Enter your username">
             </div>
 
             <div class="form-group">

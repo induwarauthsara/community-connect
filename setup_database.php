@@ -59,6 +59,7 @@ $tables = [
         CREATE TABLE IF NOT EXISTS users (
             user_id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
+            username VARCHAR(50) UNIQUE NOT NULL,
             email VARCHAR(100) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
             role ENUM('admin', 'organization', 'volunteer') NOT NULL,
@@ -71,6 +72,7 @@ $tables = [
             email_verified BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_username (username),
             INDEX idx_email (email),
             INDEX idx_role (role),
             FOREIGN KEY (organization_id) REFERENCES organizations(org_id) ON DELETE SET NULL
@@ -184,19 +186,17 @@ function createStructure($host, $username, $password, $database, $tables) {
     if ($result) { mysqli_free_result($result); }
 
     if ($admin_count == 0) {
-        $admin_password = password_hash('admin123', PASSWORD_DEFAULT);
-        $insert_admin_sql = "INSERT INTO users (name, email, password, role, is_active, email_verified) 
-                             VALUES ('System Administrator', 'admin@communityconnect.com', ?, 'admin', TRUE, TRUE)";
-        $stmt = mysqli_prepare($connection, $insert_admin_sql);
-        mysqli_stmt_bind_param($stmt, 's', $admin_password);
-        if (mysqli_stmt_execute($stmt)) {
+        $admin_password = 'ucsc';
+        $insert_admin_sql = "INSERT INTO users (name, username, email, password, role, is_active, email_verified) 
+                             VALUES ('System Administrator', 'ucsc', 'admin@communityconnect.com', '$admin_password', 'admin', TRUE, TRUE)";
+        if (mysqli_query($connection, $insert_admin_sql)) {
             echo "Admin user created.<br>";
+            echo "Username: ucsc<br>";
             echo "Email: admin@communityconnect.com<br>";
-            echo "Password: admin123 (please change after first login)<br>";
+            echo "Password: ucsc<br>";
         } else {
-            echo "Error creating admin user: " . mysqli_stmt_error($stmt) . "<br>";
+            echo "Error creating admin user: " . mysqli_error($connection) . "<br>";
         }
-        mysqli_stmt_close($stmt);
     } else {
         echo "Admin user already exists.<br>";
     }

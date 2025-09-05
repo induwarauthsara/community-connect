@@ -29,16 +29,21 @@ $success_message = '';
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
+    $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
     $role = $_POST['role'] ?? 'volunteer';
     
     // Validate inputs
-    if (empty($name) || empty($email) || empty($password) || empty($confirm_password)) {
+    if (empty($name) || empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
         $error_message = 'Please fill in all required fields.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_message = 'Please enter a valid email address.';
+    } elseif (strlen($username) < 3) {
+        $error_message = 'Username must be at least 3 characters long.';
+    } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
+        $error_message = 'Username can only contain letters, numbers, and underscores.';
     } elseif ($password !== $confirm_password) {
         $error_message = 'Passwords do not match.';
     } elseif (strlen($password) < 4) {
@@ -46,23 +51,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Escape data for simple queries
         $name = mysqli_real_escape_string($connection, $name);
+        $username = mysqli_real_escape_string($connection, $username);
         $email = mysqli_real_escape_string($connection, $email);
         $password = mysqli_real_escape_string($connection, $password);
         $role = mysqli_real_escape_string($connection, $role);
         
-        // Check if email already exists
-        $check_sql = "SELECT user_id FROM users WHERE email = '$email'";
+        // Check if username or email already exists
+        $check_sql = "SELECT user_id FROM users WHERE username = '$username' OR email = '$email'";
         $check_result = mysqli_query($connection, $check_sql);
         
         if (mysqli_num_rows($check_result) > 0) {
-            $error_message = 'An account with this email already exists.';
+            $error_message = 'An account with this username or email already exists.';
         } else {
             // Create new user (simple password storage)
-            $insert_sql = "INSERT INTO users (name, email, password, role) VALUES ('$name', '$email', '$password', '$role')";
+            $insert_sql = "INSERT INTO users (name, username, email, password, role) VALUES ('$name', '$username', '$email', '$password', '$role')";
             if (mysqli_query($connection, $insert_sql)) {
-                $success_message = 'Account created successfully! You can now login.';
+                $success_message = 'Account created successfully! You can now login with your username.';
                 // Clear form data
-                $name = $email = '';
+                $name = $username = $email = '';
             } else {
                 $error_message = 'Failed to create account. Please try again.';
             }
@@ -186,6 +192,13 @@ include 'includes/header.php';
                     <input type="text" id="name" name="name" class="form-control" required
                            value="<?php echo isset($name) ? htmlspecialchars($name) : ''; ?>"
                            placeholder="Enter your full name">
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" required
+                           value="<?php echo isset($username) ? htmlspecialchars($username) : ''; ?>"
+                           placeholder="Choose a username (letters, numbers, underscore only)">
                 </div>
 
                 <div class="form-group">
