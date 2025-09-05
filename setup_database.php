@@ -55,7 +55,7 @@ $tables = [
             address TEXT,
             mission TEXT,
             established_year YEAR,
-            created_by INT NOT NULL,
+            created_by INT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -74,6 +74,9 @@ $tables = [
             address TEXT,
             skills TEXT,
             availability TEXT,
+            birth_date DATE,
+            emergency_contact VARCHAR(100),
+            emergency_phone VARCHAR(20),
             organization_id INT NULL,
             is_active BOOLEAN DEFAULT TRUE,
             email_verified BOOLEAN DEFAULT FALSE,
@@ -90,7 +93,7 @@ $tables = [
     'organizations_fk' => "
         ALTER TABLE organizations 
         ADD CONSTRAINT fk_org_created_by 
-        FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE
+        FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
     ",
     
     // Projects table (also stores guest submissions as pending)

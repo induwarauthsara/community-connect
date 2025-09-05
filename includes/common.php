@@ -146,4 +146,31 @@ function getStatusBadge($status) {
     return $badges[$status] ?? '<span class="status-badge" style="background: #6c757d; color: white;">' . htmlspecialchars(ucfirst($status)) . '</span>';
 }
 
+// Delete record from database
+function deleteRecord($query, $params = []) {
+    return insertRecord($query, $params); // Same logic as insert/update
+}
+
+// Validate required fields
+function validateRequiredFields($fields) {
+    $missing = [];
+    foreach ($fields as $field_name => $value) {
+        if (empty(trim($value))) {
+            $missing[] = ucwords(str_replace('_', ' ', $field_name));
+        }
+    }
+    return $missing;
+}
+
+// Validate email format
+function isValidEmail($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+// Validate date format
+function isValidDate($date, $format = 'Y-m-d') {
+    $d = DateTime::createFromFormat($format, $date);
+    return $d && $d->format($format) === $date;
+}
+
 ?>
