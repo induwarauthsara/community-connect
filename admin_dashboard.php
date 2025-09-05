@@ -3,12 +3,8 @@ require_once 'config/database.php';
 require_once 'includes/common.php';
 
 // Ensure user is logged in and is admin
-requireLogin();
+requireRole('admin');
 $current_user = getCurrentUser();
-if ($current_user['role'] !== 'admin') {
-    header("Location: index.php");
-    exit();
-}
 
 $page_title = 'Admin Dashboard - Community Connect';
 $error_message = '';

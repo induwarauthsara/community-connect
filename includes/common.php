@@ -22,6 +22,26 @@ function requireLogin() {
     }
 }
 
+// Require user to have specific role
+function requireRole($required_role) {
+    requireLogin(); // First ensure user is logged in
+    
+    $user = getCurrentUser();
+    if (!$user || $user['role'] !== $required_role) {
+        // Redirect to appropriate dashboard based on actual role
+        if ($user && $user['role'] === 'admin') {
+            header("Location: admin_dashboard.php");
+        } elseif ($user && $user['role'] === 'organization') {
+            header("Location: organization_dashboard.php");
+        } elseif ($user && $user['role'] === 'volunteer') {
+            header("Location: volunteer_dashboard.php");
+        } else {
+            header("Location: login.php");
+        }
+        exit();
+    }
+}
+
 // Get current user information
 function getCurrentUser() {
     if (!isset($_SESSION['user_id'])) {
@@ -50,6 +70,9 @@ function getMultipleRecords($query, $params = []) {
     }
     
     if (!$result) {
+        // Log the error for debugging
+        error_log("Database query error: " . mysqli_error($connection));
+        error_log("Failed query: " . $query);
         return [];
     }
     
@@ -100,6 +123,27 @@ function generateRegistrationCode($length = 8) {
 function formatDate($date) {
     if (!$date) return 'Not specified';
     return date('M j, Y', strtotime($date));
+}
+
+// Truncate text to specified length
+function truncateText($text, $length = 100, $suffix = '...') {
+    if (!$text) return '';
+    if (strlen($text) <= $length) return $text;
+    return substr($text, 0, $length) . $suffix;
+}
+
+// Get status badge HTML
+function getStatusBadge($status) {
+    $badges = [
+        'pending' => '<span class="status-badge" style="background: #ffc107; color: #000;">⏳ Pending</span>',
+        'approved' => '<span class="status-badge" style="background: #28a745; color: white;">✅ Approved</span>',
+        'active' => '<span class="status-badge" style="background: #007bff; color: white;">🚀 Active</span>',
+        'completed' => '<span class="status-badge" style="background: #6c757d; color: white;">✅ Completed</span>',
+        'cancelled' => '<span class="status-badge" style="background: #dc3545; color: white;">❌ Cancelled</span>',
+        'registered' => '<span class="status-badge" style="background: #17a2b8; color: white;">📝 Registered</span>'
+    ];
+    
+    return $badges[$status] ?? '<span class="status-badge" style="background: #6c757d; color: white;">' . htmlspecialchars(ucfirst($status)) . '</span>';
 }
 
 ?>

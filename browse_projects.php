@@ -7,7 +7,14 @@ startSecureSession();
 $success = '';
 $error = '';
 $user_id = $_SESSION['user_id'] ?? null;
-$user_role = $_SESSION['user_role'] ?? null;
+
+// Get current user and role
+$current_user = null;
+$user_role = null;
+if ($user_id) {
+    $current_user = getCurrentUser();
+    $user_role = $current_user['role'] ?? null;
+}
 
 // Handle project join (volunteers only)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'join_project') {
@@ -255,7 +262,7 @@ if ($success): ?>
             <div class="action-buttons" style="margin: 0;">
                 <button type="submit" class="btn" style="margin: 0;">🔍 Search & Filter</button>
                 <?php if ($filter_org || $filter_location || $filter_skills || $sort_by !== 'newest' || $show_full): ?>
-                    <a href="browse_projects_new.php" class="btn" style="margin: 0; margin-left: 5px;">✖️ Clear All</a>
+                    <a href="browse_projects.php" class="btn" style="margin: 0; margin-left: 5px;">✖️ Clear All</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -293,7 +300,7 @@ if ($success): ?>
         <?php if ($filter_org || $filter_location || $filter_skills): ?>
             <p>No projects match your current search criteria.</p>
             <div style="margin: 20px 0;">
-                <a href="browse_projects_new.php" class="btn">View All Available Projects</a>
+                <a href="browse_projects.php" class="btn">View All Available Projects</a>
                 <button onclick="window.history.back()" class="btn">Modify Search</button>
             </div>
         <?php else: ?>
@@ -305,7 +312,7 @@ if ($success): ?>
             <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px;">
                 <p style="font-size: 14px; color: #666;">
                     Remember: You might have already joined available projects. 
-                    <a href="volunteer_dashboard_new.php">Check your dashboard</a> to see your current projects.
+                    <a href="volunteer_dashboard.php">Check your dashboard</a> to see your current projects.
                 </p>
             </div>
         <?php endif; ?>
