@@ -1,23 +1,12 @@
 <?php
 require_once 'config/database.php';
 require_once 'includes/common.php';
+
+$page_title = 'Help - Community Connect';
 include 'includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Community Connect - Help</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #F3F9FB;
-            color: #0056b3;
-        }
-
+<style>
         .hero {
             background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
             position: relative;
@@ -26,6 +15,7 @@ include 'includes/header.php';
             border-bottom-left-radius: 80px 40px;
             border-bottom-right-radius: 80px 40px;
             overflow: hidden;
+            margin: -20px -20px 40px -20px;
         }
 
         .hero-title {
@@ -258,10 +248,5 @@ include 'includes/header.php';
             </button>
         </div>
     </div>
-</body>
 
-</html>
-
-<?php
-include 'includes/footer.php';
-?>
+<?php include 'includes/footer.php'; ?>
