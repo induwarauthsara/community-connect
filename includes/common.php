@@ -173,4 +173,20 @@ function isValidDate($date, $format = 'Y-m-d') {
     return $d && $d->format($format) === $date;
 }
 
+// Validate date range (end date must be after start date)
+function isValidDateRange($start_date, $end_date) {
+    // If either date is empty, the range is considered valid
+    if (empty($start_date) || empty($end_date)) {
+        return true;
+    }
+    
+    // Both dates must be valid
+    if (!isValidDate($start_date) || !isValidDate($end_date)) {
+        return false;
+    }
+    
+    // End date must be after or equal to start date
+    return strtotime($end_date) >= strtotime($start_date);
+}
+
 ?>

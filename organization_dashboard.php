@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (($_POST['confirmed'] ?? 'false') !== 'true') {
         die('Error: Action requires confirmation');
     }
-    
+
     $name = htmlspecialchars($_POST['name']);
     $description = htmlspecialchars($_POST['description'] ?? '');
     $contact_email = htmlspecialchars($_POST['contact_email'] ?? '');
@@ -27,11 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $address = htmlspecialchars($_POST['address'] ?? '');
     $mission = htmlspecialchars($_POST['mission'] ?? '');
     $established_year = (int)($_POST['established_year'] ?? 0);
-    
+
     // Validation
     $required_fields = ['name' => $name];
     $missing = validateRequiredFields($required_fields);
-    
+
     if (!empty($missing)) {
         $error = 'Organization name is required.';
     } elseif ($contact_email && !isValidEmail($contact_email)) {
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (($_POST['confirmed'] ?? 'false') !== 'true') {
         die('Error: Action requires confirmation');
     }
-    
+
     $name = htmlspecialchars($_POST['name']);
     $description = htmlspecialchars($_POST['description'] ?? '');
     $contact_email = htmlspecialchars($_POST['contact_email'] ?? '');
@@ -67,11 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $address = htmlspecialchars($_POST['address'] ?? '');
     $mission = htmlspecialchars($_POST['mission'] ?? '');
     $established_year = (int)($_POST['established_year'] ?? 0);
-    
+
     // Validation
     $required_fields = ['name' => $name];
     $missing = validateRequiredFields($required_fields);
-    
+
     if (!empty($missing)) {
         $error = 'Organization name is required.';
     } elseif ($contact_email && !isValidEmail($contact_email)) {
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (($_POST['confirmed'] ?? 'false') !== 'true') {
         die('Error: Action requires confirmation');
     }
-    
+
     $title = htmlspecialchars($_POST['title']);
     $description = htmlspecialchars($_POST['description'] ?? '');
     $location = htmlspecialchars($_POST['location'] ?? '');
@@ -107,11 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $end_date = htmlspecialchars($_POST['end_date'] ?? '');
     $max_volunteers = (int)($_POST['max_volunteers'] ?? 0);
     $required_skills = htmlspecialchars($_POST['required_skills'] ?? '');
-    
+
     // Validation
     $required_fields = ['title' => $title];
     $missing = validateRequiredFields($required_fields);
-    
+
     if (!empty($missing)) {
         $error = 'Project title is required.';
     } elseif ($start_date && !isValidDate($start_date)) {
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (($_POST['confirmed'] ?? 'false') !== 'true') {
         die('Error: Action requires confirmation');
     }
-    
+
     $project_id = (int)$_POST['project_id'];
     $title = htmlspecialchars($_POST['title']);
     $description = htmlspecialchars($_POST['description'] ?? '');
@@ -149,11 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $end_date = htmlspecialchars($_POST['end_date'] ?? '');
     $max_volunteers = (int)($_POST['max_volunteers'] ?? 0);
     $required_skills = htmlspecialchars($_POST['required_skills'] ?? '');
-    
+
     // Validation  
     $required_fields = ['title' => $title];
     $missing = validateRequiredFields($required_fields);
-    
+
     if (!empty($missing)) {
         $error = 'Project title is required.';
     } elseif ($start_date && !isValidDate($start_date)) {
@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (($_POST['confirmed'] ?? 'false') !== 'true') {
         die('Error: Action requires confirmation');
     }
-    
+
     $project_id = (int)$_POST['project_id'];
     try {
         // First remove volunteer assignments
@@ -206,7 +206,7 @@ if ($org_id) {
         WHERE p.organization_id = ?
         ORDER BY p.created_at DESC
     ", [$org_id]);
-    
+
     // Get volunteers in this organization
     $volunteers = getMultipleRecords("
         SELECT u.*, 
@@ -300,51 +300,51 @@ include 'includes/header.php';
                         <form method="POST" onsubmit="return confirmUpdate('organization information')">
                             <input type="hidden" name="action" value="update_org">
                             <input type="hidden" name="confirmed" value="true">
-                            
+
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label for="name">Organization Name *:</label>
                                     <input type="text" id="name" name="name" value="<?= htmlspecialchars($organization['name']) ?>" required>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="contact_email">Contact Email:</label>
                                     <input type="email" id="contact_email" name="contact_email" value="<?= htmlspecialchars($organization['contact_email'] ?? '') ?>">
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="contact_phone">Contact Phone:</label>
                                     <input type="tel" id="contact_phone" name="contact_phone" value="<?= htmlspecialchars($organization['contact_phone'] ?? '') ?>">
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="website">Website:</label>
                                     <input type="url" id="website" name="website" value="<?= htmlspecialchars($organization['website'] ?? '') ?>" placeholder="https://">
                                 </div>
-                                
+
                                 <div class="form-group full-width">
                                     <label for="description">Description:</label>
                                     <textarea id="description" name="description" rows="3"><?= htmlspecialchars($organization['description'] ?? '') ?></textarea>
                                 </div>
-                                
+
                                 <div class="form-group full-width">
                                     <label for="address">Address:</label>
                                     <textarea id="address" name="address" rows="2"><?= htmlspecialchars($organization['address'] ?? '') ?></textarea>
                                 </div>
-                                
+
                                 <div class="form-group full-width">
                                     <label for="mission">Mission Statement:</label>
                                     <textarea id="mission" name="mission" rows="3"><?= htmlspecialchars($organization['mission'] ?? '') ?></textarea>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="established_year">Established Year:</label>
-                                    <input type="number" id="established_year" name="established_year" 
-                                           value="<?= $organization['established_year'] ?? '' ?>" 
-                                           min="1800" max="<?= date('Y') ?>">
+                                    <input type="number" id="established_year" name="established_year"
+                                        value="<?= $organization['established_year'] ?? '' ?>"
+                                        min="1800" max="<?= date('Y') ?>">
                                 </div>
                             </div>
-                            
+
                             <div class="form-actions">
                                 <button type="submit" class="btn-primary">
                                     <i class="fas fa-save"></i> Save Changes
@@ -407,44 +407,44 @@ include 'includes/header.php';
                 <form method="POST" onsubmit="return confirmCreate('project')">
                     <input type="hidden" name="action" value="create_project">
                     <input type="hidden" name="confirmed" value="true">
-                    
+
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="project_title">Project Title *:</label>
                             <input type="text" id="project_title" name="title" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="project_location">Location:</label>
                             <input type="text" id="project_location" name="location">
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="start_date">Start Date:</label>
                             <input type="date" id="start_date" name="start_date" min="<?= date('Y-m-d') ?>">
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="end_date">End Date:</label>
                             <input type="date" id="end_date" name="end_date" min="<?= date('Y-m-d') ?>">
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="max_volunteers">Maximum Volunteers:</label>
                             <input type="number" id="max_volunteers" name="max_volunteers" min="1">
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="required_skills">Required Skills:</label>
                             <input type="text" id="required_skills" name="required_skills" placeholder="e.g., Communication, Teamwork, Computer Skills">
                         </div>
-                        
+
                         <div class="form-group full-width">
                             <label for="project_description">Description:</label>
                             <textarea id="project_description" name="description" rows="4" placeholder="Describe the project goals, activities, and requirements..."></textarea>
                         </div>
                     </div>
-                    
+
                     <div class="form-actions">
                         <button type="submit" class="btn-primary">
                             <i class="fas fa-plus"></i> Create Project
@@ -479,14 +479,14 @@ include 'includes/header.php';
                                         </form>
                                     </div>
                                 </div>
-                                
+
                                 <div class="project-content">
                                     <div id="project-display-<?= $project['project_id'] ?>">
                                         <div class="project-info">
                                             <?php if ($project['description']): ?>
                                                 <p class="project-description"><?= htmlspecialchars($project['description']) ?></p>
                                             <?php endif; ?>
-                                            
+
                                             <div class="project-details">
                                                 <?php if ($project['location']): ?>
                                                     <span class="detail-item">
@@ -494,7 +494,7 @@ include 'includes/header.php';
                                                         <?= htmlspecialchars($project['location']) ?>
                                                     </span>
                                                 <?php endif; ?>
-                                                
+
                                                 <?php if ($project['start_date']): ?>
                                                     <span class="detail-item">
                                                         <i class="fas fa-calendar-alt"></i>
@@ -504,7 +504,7 @@ include 'includes/header.php';
                                                         <?php endif; ?>
                                                     </span>
                                                 <?php endif; ?>
-                                                
+
                                                 <?php if ($project['max_volunteers']): ?>
                                                     <span class="detail-item">
                                                         <i class="fas fa-users"></i>
@@ -516,7 +516,7 @@ include 'includes/header.php';
                                                         <?= $project['volunteer_count'] ?> volunteers
                                                     </span>
                                                 <?php endif; ?>
-                                                
+
                                                 <?php if ($project['required_skills']): ?>
                                                     <span class="detail-item">
                                                         <i class="fas fa-tools"></i>
@@ -526,51 +526,51 @@ include 'includes/header.php';
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Edit Form -->
                                     <div id="project-<?= $project['project_id'] ?>" class="edit-form" style="display: none;">
                                         <form method="POST" onsubmit="return confirmUpdate('project')">
                                             <input type="hidden" name="action" value="update_project">
                                             <input type="hidden" name="project_id" value="<?= $project['project_id'] ?>">
                                             <input type="hidden" name="confirmed" value="true">
-                                            
+
                                             <div class="form-grid">
                                                 <div class="form-group">
                                                     <label>Project Title *:</label>
                                                     <input type="text" name="title" value="<?= htmlspecialchars($project['title']) ?>" required>
                                                 </div>
-                                                
+
                                                 <div class="form-group">
                                                     <label>Location:</label>
                                                     <input type="text" name="location" value="<?= htmlspecialchars($project['location'] ?? '') ?>">
                                                 </div>
-                                                
+
                                                 <div class="form-group">
                                                     <label>Start Date:</label>
                                                     <input type="date" name="start_date" value="<?= $project['start_date'] ?>" min="<?= date('Y-m-d') ?>">
                                                 </div>
-                                                
+
                                                 <div class="form-group">
                                                     <label>End Date:</label>
                                                     <input type="date" name="end_date" value="<?= $project['end_date'] ?>" min="<?= date('Y-m-d') ?>">
                                                 </div>
-                                                
+
                                                 <div class="form-group">
                                                     <label>Maximum Volunteers:</label>
                                                     <input type="number" name="max_volunteers" value="<?= $project['max_volunteers'] ?>" min="1">
                                                 </div>
-                                                
+
                                                 <div class="form-group">
                                                     <label>Required Skills:</label>
                                                     <input type="text" name="required_skills" value="<?= htmlspecialchars($project['required_skills'] ?? '') ?>">
                                                 </div>
-                                                
+
                                                 <div class="form-group full-width">
                                                     <label>Description:</label>
                                                     <textarea name="description" rows="3"><?= htmlspecialchars($project['description'] ?? '') ?></textarea>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="form-actions">
                                                 <button type="submit" class="btn-primary">
                                                     <i class="fas fa-save"></i> Save Changes
@@ -625,224 +625,36 @@ include 'includes/header.php';
 </div>
 
 <script>
-function toggleEdit(elementId) {
-    const editForm = document.getElementById(elementId);
-    const displayDiv = document.getElementById(elementId.replace('-edit', '-display').replace('project-', 'project-display-'));
-    
-    if (editForm.style.display === 'none') {
-        editForm.style.display = 'block';
-        if (displayDiv) displayDiv.style.display = 'none';
-    } else {
-        editForm.style.display = 'none';
-        if (displayDiv) displayDiv.style.display = 'block';
+    function toggleEdit(elementId) {
+        const editForm = document.getElementById(elementId);
+        const displayDiv = document.getElementById(elementId.replace('-edit', '-display').replace('project-', 'project-display-'));
+
+        if (editForm.style.display === 'none') {
+            editForm.style.display = 'block';
+            if (displayDiv) displayDiv.style.display = 'none';
+        } else {
+            editForm.style.display = 'none';
+            if (displayDiv) displayDiv.style.display = 'block';
+        }
     }
-}
 
-function toggleSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    section.style.display = section.style.display === 'none' ? 'block' : 'none';
-}
+    function toggleSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    }
 
-// Auto-hide alerts after 5 seconds
-document.addEventListener('DOMContentLoaded', function() {
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-        setTimeout(() => {
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 300);
-        }, 5000);
+    // Auto-hide alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        });
     });
-});
 </script>
 
-<style>
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-}
-
-.stat-item {
-    text-align: center;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px solid #e9ecef;
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #007bff;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.projects-grid {
-    display: grid;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.project-card {
-    border: 2px solid #e9ecef;
-    border-radius: 10px;
-    padding: 20px;
-    background: white;
-    transition: all 0.3s ease;
-}
-
-.project-card:hover {
-    border-color: #007bff;
-    box-shadow: 0 4px 12px rgba(0,123,255,0.1);
-}
-
-.project-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-}
-
-.project-header h3 {
-    margin: 0;
-    color: #2c3e50;
-    font-size: 1.2rem;
-}
-
-.project-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.project-description {
-    margin: 10px 0;
-    color: #666;
-    line-height: 1.5;
-}
-
-.project-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.detail-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.9rem;
-    color: #666;
-}
-
-.detail-item i {
-    color: #007bff;
-    width: 16px;
-}
-
-.volunteers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 15px;
-}
-
-.volunteer-card {
-    padding: 15px;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    background: white;
-    transition: border-color 0.3s ease;
-}
-
-.volunteer-card:hover {
-    border-color: #007bff;
-}
-
-.volunteer-info h4 {
-    margin: 0 0 5px 0;
-    color: #2c3e50;
-}
-
-.volunteer-info p {
-    margin: 3px 0;
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.volunteer-stats {
-    margin-top: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.stat-badge {
-    background: #007bff;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.detail-text {
-    font-size: 0.8rem;
-    color: #999;
-}
-
-.form-section {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border: 2px solid #e9ecef;
-}
-
-.form-section h3 {
-    margin-top: 0;
-    color: #2c3e50;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 10px;
-}
-
-@media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .project-header {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .project-details {
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .volunteers-grid {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
+<link rel="stylesheet" href="assets/css/organization_dashboard.css">
 
 <?php include 'includes/footer.php'; ?>
