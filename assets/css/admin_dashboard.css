@@ -429,3 +429,78 @@
         padding: 8px;
     }
 }
+
+
+/* Assignment Details Modal Specific Styles */
+
+.assignment-details-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.assignment-detail-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-blue);
+}
+
+.assignment-detail-section h3 {
+    margin: 0 0 15px 0;
+    color: var(--dark-blue);
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.assignment-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.assignment-actions .btn {
+    flex: 1;
+    min-width: 150px;
+    text-align: center;
+}
+
+.status-badge.registered {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.status-badge.confirmed {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-badge.completed {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-badge.cancelled {
+    background-color: #dc3545;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .assignment-details-grid {
+        gap: 20px;
+    }
+    .assignment-detail-section {
+        padding: 15px;
+    }
+    .assignment-actions {
+        flex-direction: column;
+    }
+    .assignment-actions .btn {
+        min-width: auto;
+    }
+}

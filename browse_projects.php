@@ -57,10 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         $error = 'You can only join projects from your current organization (' . htmlspecialchars($project['org_name']) . '). Leave your current organization first to join projects from other organizations.';
                     } else {
                         // Join the project
-                        $registration_code = generateRegistrationCode();
                         insertRecord(
-                            "INSERT INTO volunteer_projects (volunteer_id, project_id, status, registration_code) VALUES (?, ?, 'registered', ?)",
-                            [$user_id, $project_id, $registration_code]
+                            "INSERT INTO volunteer_projects (volunteer_id, project_id, status) VALUES (?, ?, 'registered')",
+                            [$user_id, $project_id]
                         );
                         
                         // Set organization if not set
@@ -71,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             );
                         }
                         
-                        $success = 'Successfully joined "' . htmlspecialchars($project['title']) . '"! You are now part of ' . htmlspecialchars($project['org_name']) . '. Your registration code is: ' . $registration_code;
+                        $success = 'Successfully joined "' . htmlspecialchars($project['title']) . '"! You are now part of ' . htmlspecialchars($project['org_name']) . '.';
                     }
                 }
             }

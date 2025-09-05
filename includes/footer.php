@@ -26,8 +26,16 @@
             return confirmAction('Are you sure you want to create this?');
         }
         
-        function confirmJoin() {
-            return confirm('Are you sure you want to join this project?');
+        function confirmJoin(form) {
+            if (confirm('Are you sure you want to join this project?')) {
+                // Set the confirmed field to true
+                const confirmedField = form.querySelector('input[name="confirmed"]');
+                if (confirmedField) {
+                    confirmedField.value = 'true';
+                }
+                return true;
+            }
+            return false;
         }
         
         function confirmLeave() {

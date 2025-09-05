@@ -74,6 +74,51 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_project_details') {
     exit();
 }
 
+if (isset($_GET['action']) && $_GET['action'] === 'get_assignment_details') {
+    header('Content-Type: application/json');
+    
+    $assignment_id = (int)$_GET['assignment_id'];
+    
+    $query = "SELECT vp.*, 
+                     u.name as volunteer_name, u.email as volunteer_email, u.phone as volunteer_phone, 
+                     u.address as volunteer_address, u.created_at as volunteer_joined,
+                     p.title as project_title, p.description as project_description, 
+                     p.location as project_location, p.start_date, p.end_date,
+                     o.name as org_name, o.contact_email as org_email
+              FROM volunteer_projects vp 
+              JOIN users u ON vp.volunteer_id = u.user_id 
+              JOIN projects p ON vp.project_id = p.project_id 
+              LEFT JOIN organizations o ON p.organization_id = o.org_id 
+              WHERE vp.id = $assignment_id";
+    
+    $result = mysqli_query($connection, $query);
+    $assignment = mysqli_fetch_assoc($result);
+    
+    if ($assignment) {
+        // Get volunteer's other assignments count
+        $other_assignments_query = "SELECT COUNT(*) as total_assignments 
+                                  FROM volunteer_projects vp2 
+                                  WHERE vp2.volunteer_id = {$assignment['volunteer_id']}";
+        $other_result = mysqli_query($connection, $other_assignments_query);
+        $other_data = mysqli_fetch_assoc($other_result);
+        $assignment['total_assignments'] = $other_data['total_assignments'];
+        
+        // Get volunteer's completed assignments count
+        $completed_assignments_query = "SELECT COUNT(*) as completed_assignments 
+                                      FROM volunteer_projects vp3 
+                                      WHERE vp3.volunteer_id = {$assignment['volunteer_id']} 
+                                      AND vp3.status = 'completed'";
+        $completed_result = mysqli_query($connection, $completed_assignments_query);
+        $completed_data = mysqli_fetch_assoc($completed_result);
+        $assignment['completed_assignments'] = $completed_data['completed_assignments'];
+        
+        echo json_encode($assignment);
+    } else {
+        echo json_encode(['error' => 'Assignment not found']);
+    }
+    exit();
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = trim($_POST['action'] ?? '');
@@ -239,6 +284,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success_message = 'Project status updated successfully.';
             } else {
                 $error_message = 'Error updating project status: ' . mysqli_error($connection);
+            }
+            break;
+            
+        case 'update_assignment_status':
+            $assignment_id = (int)$_POST['assignment_id'];
+            $status = mysqli_real_escape_string($connection, trim($_POST['status'] ?? ''));
+            
+            // Validate status
+            $valid_statuses = ['registered', 'confirmed', 'completed', 'cancelled'];
+            if (!in_array($status, $valid_statuses)) {
+                $error_message = 'Invalid assignment status.';
+                break;
+            }
+            
+            // Update completed_at if status is being set to completed
+            $completed_at_sql = '';
+            if ($status === 'completed') {
+                $completed_at_sql = ', completed_at = NOW()';
+            } elseif ($status !== 'completed') {
+                $completed_at_sql = ', completed_at = NULL';
+            }
+            
+            if (mysqli_query($connection, "UPDATE volunteer_projects SET status = '$status' $completed_at_sql WHERE id = $assignment_id")) {
+                $success_message = 'Assignment status updated successfully.';
+            } else {
+                $error_message = 'Error updating assignment status: ' . mysqli_error($connection);
             }
             break;
             
@@ -923,6 +994,17 @@ include 'includes/header.php';
         <h2>Project Details</h2>
         <div id="project-details-content">
             <div class="loading">Loading project details...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Assignment Details Modal -->
+<div id="assignment-details-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeAssignmentDetailsModal()">&times;</span>
+        <h2>Assignment Details</h2>
+        <div id="assignment-details-content">
+            <div class="loading">Loading assignment details...</div>
         </div>
     </div>
 </div>
