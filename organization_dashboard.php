@@ -2,196 +2,183 @@
 require_once 'config/database.php';
 require_once 'includes/common.php';
 
-startSecureSession();
+// Ensure user is logged in and is organization
 requireRole('organization');
+$current_user = getCurrentUser();
+
+$page_title = 'Organization Dashboard - Community Connect';
+$error_message = '';
+$success_message = '';
 
 $user_id = $_SESSION['user_id'];
-$success = '';
-$error = '';
 
 // Get organization data
-$organization = getSingleRecord("SELECT * FROM organizations WHERE created_by = ?", [$user_id]);
+$organization_query = "SELECT * FROM organizations WHERE created_by = $user_id";
+$organization_result = mysqli_query($connection, $organization_query);
+$organization = mysqli_fetch_assoc($organization_result);
 $org_id = $organization ? (int)$organization['org_id'] : null;
 
 // Handle organization create
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_org') {
-    if (($_POST['confirmed'] ?? 'false') !== 'true') {
-        die('Error: Action requires confirmation');
-    }
+    $name = mysqli_real_escape_string($connection, trim($_POST['name'] ?? ''));
+    $description = mysqli_real_escape_string($connection, trim($_POST['description'] ?? ''));
+    $contact_email = mysqli_real_escape_string($connection, trim($_POST['contact_email'] ?? ''));
+    $contact_phone = mysqli_real_escape_string($connection, trim($_POST['contact_phone'] ?? ''));
+    $website = mysqli_real_escape_string($connection, trim($_POST['website'] ?? ''));
+    $address = mysqli_real_escape_string($connection, trim($_POST['address'] ?? ''));
+    $mission = mysqli_real_escape_string($connection, trim($_POST['mission'] ?? ''));
+    $established_year = !empty($_POST['established_year']) ? (int)$_POST['established_year'] : null;
 
-    $name = htmlspecialchars($_POST['name']);
-    $description = htmlspecialchars($_POST['description'] ?? '');
-    $contact_email = htmlspecialchars($_POST['contact_email'] ?? '');
-    $contact_phone = htmlspecialchars($_POST['contact_phone'] ?? '');
-    $website = htmlspecialchars($_POST['website'] ?? '');
-    $address = htmlspecialchars($_POST['address'] ?? '');
-    $mission = htmlspecialchars($_POST['mission'] ?? '');
-    $established_year = (int)($_POST['established_year'] ?? 0);
-
-    // Validation
-    $required_fields = ['name' => $name];
-    $missing = validateRequiredFields($required_fields);
-
-    if (!empty($missing)) {
-        $error = 'Organization name is required.';
-    } elseif ($contact_email && !isValidEmail($contact_email)) {
-        $error = 'Please enter a valid contact email address.';
+    if (empty($name)) {
+        $error_message = 'Organization name is required.';
+    } elseif ($contact_email && !filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = 'Please enter a valid contact email address.';
     } elseif ($website && !filter_var($website, FILTER_VALIDATE_URL)) {
-        $error = 'Please enter a valid website URL.';
+        $error_message = 'Please enter a valid website URL.';
     } elseif ($established_year && ($established_year < 1800 || $established_year > date('Y'))) {
-        $error = 'Please enter a valid established year.';
+        $error_message = 'Please enter a valid established year.';
     } else {
-        try {
-            $org_id = insertRecord(
-                "INSERT INTO organizations (name, description, contact_email, contact_phone, website, address, mission, established_year, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [$name, $description, $contact_email, $contact_phone, $website, $address, $mission, $established_year ?: null, $user_id]
-            );
-            $success = 'Organization created successfully! You can now start creating volunteer projects.';
-            $organization = getSingleRecord("SELECT * FROM organizations WHERE org_id = ?", [$org_id]);
-        } catch (Exception $e) {
-            $error = 'Failed to create organization. Please try again.';
+        $established_year_value = $established_year ? $established_year : 'NULL';
+        $sql = "INSERT INTO organizations (name, description, contact_email, contact_phone, website, address, mission, established_year, created_by) 
+                VALUES ('$name', '$description', '$contact_email', '$contact_phone', '$website', '$address', '$mission', $established_year_value, $user_id)";
+        
+        if (mysqli_query($connection, $sql)) {
+            $org_id = mysqli_insert_id($connection);
+            $success_message = 'Organization created successfully! You can now start creating volunteer projects.';
+            // Refresh organization data
+            $organization_result = mysqli_query($connection, "SELECT * FROM organizations WHERE org_id = $org_id");
+            $organization = mysqli_fetch_assoc($organization_result);
+        } else {
+            $error_message = 'Failed to create organization. Please try again.';
         }
     }
 }
 // Handle organization update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_org') {
-    if (($_POST['confirmed'] ?? 'false') !== 'true') {
-        die('Error: Action requires confirmation');
-    }
+    $name = mysqli_real_escape_string($connection, trim($_POST['name'] ?? ''));
+    $description = mysqli_real_escape_string($connection, trim($_POST['description'] ?? ''));
+    $contact_email = mysqli_real_escape_string($connection, trim($_POST['contact_email'] ?? ''));
+    $contact_phone = mysqli_real_escape_string($connection, trim($_POST['contact_phone'] ?? ''));
+    $website = mysqli_real_escape_string($connection, trim($_POST['website'] ?? ''));
+    $address = mysqli_real_escape_string($connection, trim($_POST['address'] ?? ''));
+    $mission = mysqli_real_escape_string($connection, trim($_POST['mission'] ?? ''));
+    $established_year = !empty($_POST['established_year']) ? (int)$_POST['established_year'] : null;
 
-    $name = htmlspecialchars($_POST['name']);
-    $description = htmlspecialchars($_POST['description'] ?? '');
-    $contact_email = htmlspecialchars($_POST['contact_email'] ?? '');
-    $contact_phone = htmlspecialchars($_POST['contact_phone'] ?? '');
-    $website = htmlspecialchars($_POST['website'] ?? '');
-    $address = htmlspecialchars($_POST['address'] ?? '');
-    $mission = htmlspecialchars($_POST['mission'] ?? '');
-    $established_year = (int)($_POST['established_year'] ?? 0);
-
-    // Validation
-    $required_fields = ['name' => $name];
-    $missing = validateRequiredFields($required_fields);
-
-    if (!empty($missing)) {
-        $error = 'Organization name is required.';
-    } elseif ($contact_email && !isValidEmail($contact_email)) {
-        $error = 'Please enter a valid contact email address.';
+    if (empty($name)) {
+        $error_message = 'Organization name is required.';
+    } elseif ($contact_email && !filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = 'Please enter a valid contact email address.';
     } elseif ($website && !filter_var($website, FILTER_VALIDATE_URL)) {
-        $error = 'Please enter a valid website URL.';
+        $error_message = 'Please enter a valid website URL.';
     } elseif ($established_year && ($established_year < 1800 || $established_year > date('Y'))) {
-        $error = 'Please enter a valid established year.';
+        $error_message = 'Please enter a valid established year.';
     } else {
-        try {
-            updateRecord(
-                "UPDATE organizations SET name = ?, description = ?, contact_email = ?, contact_phone = ?, website = ?, address = ?, mission = ?, established_year = ? WHERE org_id = ?",
-                [$name, $description, $contact_email, $contact_phone, $website, $address, $mission, $established_year ?: null, $org_id]
-            );
-            $success = 'Organization information updated successfully!';
-            $organization = getSingleRecord("SELECT * FROM organizations WHERE org_id = ?", [$org_id]);
-        } catch (Exception $e) {
-            $error = 'Failed to update organization. Please try again.';
+        $established_year_value = $established_year ? $established_year : 'NULL';
+        $sql = "UPDATE organizations SET name = '$name', description = '$description', contact_email = '$contact_email', 
+                contact_phone = '$contact_phone', website = '$website', address = '$address', mission = '$mission', 
+                established_year = $established_year_value WHERE org_id = $org_id";
+        
+        if (mysqli_query($connection, $sql)) {
+            $success_message = 'Organization information updated successfully!';
+            // Refresh organization data
+            $organization_result = mysqli_query($connection, "SELECT * FROM organizations WHERE org_id = $org_id");
+            $organization = mysqli_fetch_assoc($organization_result);
+        } else {
+            $error_message = 'Failed to update organization. Please try again.';
         }
     }
 }
 
 // Handle project create
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_project') {
-    if (($_POST['confirmed'] ?? 'false') !== 'true') {
-        die('Error: Action requires confirmation');
-    }
-
-    $title = htmlspecialchars($_POST['title']);
-    $description = htmlspecialchars($_POST['description'] ?? '');
-    $location = htmlspecialchars($_POST['location'] ?? '');
-    $start_date = htmlspecialchars($_POST['start_date'] ?? '');
-    $end_date = htmlspecialchars($_POST['end_date'] ?? '');
-    $max_volunteers = (int)($_POST['max_volunteers'] ?? 0);
-    $required_skills = htmlspecialchars($_POST['required_skills'] ?? '');
-
-    // Validation
-    $required_fields = ['title' => $title];
-    $missing = validateRequiredFields($required_fields);
-
-    if (!empty($missing)) {
-        $error = 'Project title is required.';
-    } elseif ($start_date && !isValidDate($start_date)) {
-        $error = 'Please enter a valid start date.';
-    } elseif ($end_date && !isValidDate($end_date)) {
-        $error = 'Please enter a valid end date.';
-    } elseif (!isValidDateRange($start_date, $end_date)) {
-        $error = 'End date must be after start date.';
-    } elseif ($max_volunteers < 0) {
-        $error = 'Maximum volunteers must be a positive number.';
+    $title = mysqli_real_escape_string($connection, trim($_POST['title'] ?? ''));
+    $description = mysqli_real_escape_string($connection, trim($_POST['description'] ?? ''));
+    $location = mysqli_real_escape_string($connection, trim($_POST['location'] ?? ''));
+    $start_date = trim($_POST['start_date'] ?? '');
+    $end_date = trim($_POST['end_date'] ?? '');
+    $start_time = trim($_POST['start_time'] ?? '');
+    $end_time = trim($_POST['end_time'] ?? '');
+    $capacity = !empty($_POST['capacity']) ? (int)$_POST['capacity'] : null;
+    $skills_needed = mysqli_real_escape_string($connection, trim($_POST['skills_needed'] ?? ''));
+    $requirements = mysqli_real_escape_string($connection, trim($_POST['requirements'] ?? ''));
+    $priority = mysqli_real_escape_string($connection, trim($_POST['priority'] ?? 'medium'));
+    
+    if (empty($title)) {
+        $error_message = 'Project title is required.';
     } else {
-        try {
-            insertRecord(
-                "INSERT INTO projects (title, description, location, start_date, end_date, max_volunteers, required_skills, created_by, organization_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')",
-                [$title, $description, $location, $start_date ?: null, $end_date ?: null, $max_volunteers ?: null, $required_skills, $user_id, $org_id]
-            );
-            $success = 'Project created successfully! It will be visible to volunteers after admin approval.';
-        } catch (Exception $e) {
-            $error = 'Failed to create project. Please try again.';
+        $start_date_value = !empty($start_date) ? "'$start_date'" : 'NULL';
+        $end_date_value = !empty($end_date) ? "'$end_date'" : 'NULL';
+        $start_time_value = !empty($start_time) ? "'$start_time'" : 'NULL';
+        $end_time_value = !empty($end_time) ? "'$end_time'" : 'NULL';
+        $capacity_value = $capacity ? $capacity : 'NULL';
+        $org_value = $org_id ? $org_id : 'NULL';
+        
+        $sql = "INSERT INTO projects (title, description, location, start_date, end_date, start_time, end_time, 
+                capacity, skills_needed, requirements, priority, organization_id, created_by, status) 
+                VALUES ('$title', '$description', '$location', $start_date_value, $end_date_value, 
+                $start_time_value, $end_time_value, $capacity_value, '$skills_needed', '$requirements', 
+                '$priority', $org_value, {$current_user['user_id']}, 'pending')";
+        
+        if (mysqli_query($connection, $sql)) {
+            $success_message = 'Project created successfully! It will be visible to volunteers after admin approval.';
+        } else {
+            $error_message = 'Error creating project: ' . mysqli_error($connection);
         }
     }
 }
 
 // Handle project update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_project') {
-    if (($_POST['confirmed'] ?? 'false') !== 'true') {
-        die('Error: Action requires confirmation');
-    }
-
     $project_id = (int)$_POST['project_id'];
-    $title = htmlspecialchars($_POST['title']);
-    $description = htmlspecialchars($_POST['description'] ?? '');
-    $location = htmlspecialchars($_POST['location'] ?? '');
-    $start_date = htmlspecialchars($_POST['start_date'] ?? '');
-    $end_date = htmlspecialchars($_POST['end_date'] ?? '');
-    $max_volunteers = (int)($_POST['max_volunteers'] ?? 0);
-    $required_skills = htmlspecialchars($_POST['required_skills'] ?? '');
+    $title = mysqli_real_escape_string($connection, trim($_POST['title'] ?? ''));
+    $description = mysqli_real_escape_string($connection, trim($_POST['description'] ?? ''));
+    $location = mysqli_real_escape_string($connection, trim($_POST['location'] ?? ''));
+    $start_date = trim($_POST['start_date'] ?? '');
+    $end_date = trim($_POST['end_date'] ?? '');
+    $start_time = trim($_POST['start_time'] ?? '');
+    $end_time = trim($_POST['end_time'] ?? '');
+    $capacity = !empty($_POST['capacity']) ? (int)$_POST['capacity'] : null;
+    $skills_needed = mysqli_real_escape_string($connection, trim($_POST['skills_needed'] ?? ''));
+    $requirements = mysqli_real_escape_string($connection, trim($_POST['requirements'] ?? ''));
+    $priority = mysqli_real_escape_string($connection, trim($_POST['priority'] ?? 'medium'));
 
-    // Validation  
-    $required_fields = ['title' => $title];
-    $missing = validateRequiredFields($required_fields);
-
-    if (!empty($missing)) {
-        $error = 'Project title is required.';
-    } elseif ($start_date && !isValidDate($start_date)) {
-        $error = 'Please enter a valid start date.';
-    } elseif ($end_date && !isValidDate($end_date)) {
-        $error = 'Please enter a valid end date.';
-    } elseif (!isValidDateRange($start_date, $end_date)) {
-        $error = 'End date must be after start date.';
-    } elseif ($max_volunteers < 0) {
-        $error = 'Maximum volunteers must be a positive number.';
+    if (empty($title)) {
+        $error_message = 'Project title is required.';
     } else {
-        try {
-            updateRecord(
-                "UPDATE projects SET title = ?, description = ?, location = ?, start_date = ?, end_date = ?, max_volunteers = ?, required_skills = ? WHERE project_id = ? AND created_by = ?",
-                [$title, $description, $location, $start_date ?: null, $end_date ?: null, $max_volunteers ?: null, $required_skills, $project_id, $user_id]
-            );
-            $success = 'Project updated successfully!';
-        } catch (Exception $e) {
-            $error = 'Failed to update project. Please try again.';
+        $start_date_value = !empty($start_date) ? "'$start_date'" : 'NULL';
+        $end_date_value = !empty($end_date) ? "'$end_date'" : 'NULL';
+        $start_time_value = !empty($start_time) ? "'$start_time'" : 'NULL';
+        $end_time_value = !empty($end_time) ? "'$end_time'" : 'NULL';
+        $capacity_value = $capacity ? $capacity : 'NULL';
+        
+        $sql = "UPDATE projects SET title = '$title', description = '$description', location = '$location', 
+                start_date = $start_date_value, end_date = $end_date_value, start_time = $start_time_value, 
+                end_time = $end_time_value, capacity = $capacity_value, skills_needed = '$skills_needed', 
+                requirements = '$requirements', priority = '$priority' 
+                WHERE project_id = $project_id AND created_by = {$current_user['user_id']}";
+        
+        if (mysqli_query($connection, $sql)) {
+            $success_message = 'Project updated successfully!';
+        } else {
+            $error_message = 'Error updating project: ' . mysqli_error($connection);
         }
     }
 }
 
 // Handle project delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_project') {
-    if (($_POST['confirmed'] ?? 'false') !== 'true') {
-        die('Error: Action requires confirmation');
-    }
-
     $project_id = (int)$_POST['project_id'];
-    try {
-        // First remove volunteer assignments
-        deleteRecord("DELETE FROM volunteer_projects WHERE project_id = ?", [$project_id]);
+    
+    // First remove volunteer assignments
+    if (mysqli_query($connection, "DELETE FROM volunteer_projects WHERE project_id = $project_id")) {
         // Then delete the project
-        deleteRecord("DELETE FROM projects WHERE project_id = ? AND created_by = ?", [$project_id, $user_id]);
-        $success = 'Project and all volunteer assignments deleted successfully!';
-    } catch (Exception $e) {
-        $error = 'Failed to delete project. Please try again.';
+        if (mysqli_query($connection, "DELETE FROM projects WHERE project_id = $project_id AND created_by = $user_id")) {
+            $success_message = 'Project and all volunteer assignments deleted successfully!';
+        } else {
+            $error_message = 'Failed to delete project. Please try again.';
+        }
+    } else {
+        $error_message = 'Failed to delete project assignments. Please try again.';
     }
 }
 
@@ -199,50 +186,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $projects = [];
 $volunteers = [];
 if ($org_id) {
-    $projects = getMultipleRecords("
-        SELECT p.*, 
-               (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) as volunteer_count
-        FROM projects p
-        WHERE p.organization_id = ?
-        ORDER BY p.created_at DESC
-    ", [$org_id]);
+    $projects_query = "SELECT p.*, 
+                      (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) as volunteer_count
+                      FROM projects p
+                      WHERE p.organization_id = $org_id
+                      ORDER BY p.created_at DESC";
+    $projects_result = mysqli_query($connection, $projects_query);
+    if ($projects_result) {
+        while ($project = mysqli_fetch_assoc($projects_result)) {
+            $projects[] = $project;
+        }
+    }
 
     // Get volunteers in this organization
-    $volunteers = getMultipleRecords("
-        SELECT u.*, 
-               (SELECT COUNT(*) FROM volunteer_projects vp JOIN projects p ON vp.project_id = p.project_id WHERE vp.volunteer_id = u.user_id AND p.organization_id = ?) as project_count
-        FROM users u
-        WHERE u.organization_id = ? AND u.role = 'volunteer'
-        ORDER BY u.name
-    ", [$org_id, $org_id]);
+    $volunteers_query = "SELECT u.*, 
+                        (SELECT COUNT(*) FROM volunteer_projects vp JOIN projects p ON vp.project_id = p.project_id 
+                         WHERE vp.volunteer_id = u.user_id AND p.organization_id = $org_id) as project_count
+                        FROM users u
+                        WHERE u.organization_id = $org_id AND u.role = 'volunteer'
+                        ORDER BY u.name";
+    $volunteers_result = mysqli_query($connection, $volunteers_query);
+    if ($volunteers_result) {
+        while ($volunteer = mysqli_fetch_assoc($volunteers_result)) {
+            $volunteers[] = $volunteer;
+        }
+    }
 }
 
-$page_title = 'Organization Dashboard - Enhanced';
+$page_title = 'Organization Dashboard - Community Connect';
 include 'includes/header.php';
 ?>
 
 <div class="container">
     <div class="dashboard-header">
         <div class="header-content">
-            <h1><i class="fas fa-building"></i> Organization Dashboard - Enhanced</h1>
+            <h1><i class="fas fa-building"></i> Organization Dashboard</h1>
             <div class="header-actions">
-                <span class="user-info">Welcome, <strong><?= htmlspecialchars($user['name']) ?></strong></span>
+                <span class="user-info">Welcome, <strong><?= htmlspecialchars($current_user['name']) ?></strong></span>
                 <a href="logout.php" class="btn-logout">Logout</a>
             </div>
         </div>
     </div>
 
-    <?php if ($error): ?>
+    <?php if ($error_message): ?>
         <div class="alert alert-error">
             <i class="fas fa-exclamation-triangle"></i>
-            <?= htmlspecialchars($error) ?>
+            <?= htmlspecialchars($error_message) ?>
         </div>
     <?php endif; ?>
 
-    <?php if ($success): ?>
+    <?php if ($success_message): ?>
         <div class="alert alert-success">
             <i class="fas fa-check-circle"></i>
-            <?= htmlspecialchars($success) ?>
+            <?= htmlspecialchars($success_message) ?>
         </div>
     <?php endif; ?>
 
@@ -299,7 +295,6 @@ include 'includes/header.php';
                     <div id="org-edit" class="edit-form" style="display: none;">
                         <form method="POST" onsubmit="return confirmUpdate('organization information')">
                             <input type="hidden" name="action" value="update_org">
-                            <input type="hidden" name="confirmed" value="true">
 
                             <div class="form-grid">
                                 <div class="form-group">
@@ -406,7 +401,6 @@ include 'includes/header.php';
                 <h3>Create New Project</h3>
                 <form method="POST" onsubmit="return confirmCreate('project')">
                     <input type="hidden" name="action" value="create_project">
-                    <input type="hidden" name="confirmed" value="true">
 
                     <div class="form-grid">
                         <div class="form-group">
@@ -430,18 +424,42 @@ include 'includes/header.php';
                         </div>
 
                         <div class="form-group">
-                            <label for="max_volunteers">Maximum Volunteers:</label>
-                            <input type="number" id="max_volunteers" name="max_volunteers" min="1">
+                            <label for="start_time">Start Time:</label>
+                            <input type="time" id="start_time" name="start_time">
                         </div>
 
                         <div class="form-group">
-                            <label for="required_skills">Required Skills:</label>
-                            <input type="text" id="required_skills" name="required_skills" placeholder="e.g., Communication, Teamwork, Computer Skills">
+                            <label for="end_time">End Time:</label>
+                            <input type="time" id="end_time" name="end_time">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="capacity">Maximum Volunteers:</label>
+                            <input type="number" id="capacity" name="capacity" min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="skills_needed">Required Skills:</label>
+                            <input type="text" id="skills_needed" name="skills_needed" placeholder="e.g., Communication, Teamwork, Computer Skills">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="priority">Priority:</label>
+                            <select id="priority" name="priority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
                         </div>
 
                         <div class="form-group full-width">
                             <label for="project_description">Description:</label>
                             <textarea id="project_description" name="description" rows="4" placeholder="Describe the project goals, activities, and requirements..."></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="requirements">Requirements:</label>
+                            <textarea id="requirements" name="requirements" rows="3" placeholder="Any specific requirements or qualifications needed..."></textarea>
                         </div>
                     </div>
 
@@ -472,7 +490,6 @@ include 'includes/header.php';
                                         <form method="POST" style="display: inline;" onsubmit="return confirmDelete('project')">
                                             <input type="hidden" name="action" value="delete_project">
                                             <input type="hidden" name="project_id" value="<?= $project['project_id'] ?>">
-                                            <input type="hidden" name="confirmed" value="true">
                                             <button type="submit" class="btn-icon btn-danger" title="Delete Project">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -502,13 +519,22 @@ include 'includes/header.php';
                                                         <?php if ($project['end_date']): ?>
                                                             - <?= formatDate($project['end_date']) ?>
                                                         <?php endif; ?>
+                                                        <?php if ($project['start_time'] || $project['end_time']): ?>
+                                                            <br>
+                                                            <?php if ($project['start_time']): ?>
+                                                                <?= date('g:i A', strtotime($project['start_time'])) ?>
+                                                            <?php endif; ?>
+                                                            <?php if ($project['end_time']): ?>
+                                                                - <?= date('g:i A', strtotime($project['end_time'])) ?>
+                                                            <?php endif; ?>
+                                                        <?php endif; ?>
                                                     </span>
                                                 <?php endif; ?>
 
-                                                <?php if ($project['max_volunteers']): ?>
+                                                <?php if ($project['capacity']): ?>
                                                     <span class="detail-item">
                                                         <i class="fas fa-users"></i>
-                                                        <?= $project['volunteer_count'] ?>/<?= $project['max_volunteers'] ?> volunteers
+                                                        <?= $project['volunteer_count'] ?>/<?= $project['capacity'] ?> volunteers
                                                     </span>
                                                 <?php else: ?>
                                                     <span class="detail-item">
@@ -517,10 +543,24 @@ include 'includes/header.php';
                                                     </span>
                                                 <?php endif; ?>
 
-                                                <?php if ($project['required_skills']): ?>
+                                                <?php if ($project['skills_needed']): ?>
                                                     <span class="detail-item">
                                                         <i class="fas fa-tools"></i>
-                                                        <?= htmlspecialchars($project['required_skills']) ?>
+                                                        <?= htmlspecialchars($project['skills_needed']) ?>
+                                                    </span>
+                                                <?php endif; ?>
+
+                                                <?php if ($project['priority']): ?>
+                                                    <span class="detail-item">
+                                                        <i class="fas fa-flag"></i>
+                                                        Priority: <?= ucfirst(htmlspecialchars($project['priority'])) ?>
+                                                    </span>
+                                                <?php endif; ?>
+
+                                                <?php if ($project['requirements']): ?>
+                                                    <span class="detail-item">
+                                                        <i class="fas fa-list-ul"></i>
+                                                        Requirements: <?= htmlspecialchars($project['requirements']) ?>
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
@@ -532,7 +572,6 @@ include 'includes/header.php';
                                         <form method="POST" onsubmit="return confirmUpdate('project')">
                                             <input type="hidden" name="action" value="update_project">
                                             <input type="hidden" name="project_id" value="<?= $project['project_id'] ?>">
-                                            <input type="hidden" name="confirmed" value="true">
 
                                             <div class="form-grid">
                                                 <div class="form-group">
@@ -556,18 +595,42 @@ include 'includes/header.php';
                                                 </div>
 
                                                 <div class="form-group">
+                                                    <label>Start Time:</label>
+                                                    <input type="time" name="start_time" value="<?= $project['start_time'] ?? '' ?>">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label>End Time:</label>
+                                                    <input type="time" name="end_time" value="<?= $project['end_time'] ?? '' ?>">
+                                                </div>
+
+                                                <div class="form-group">
                                                     <label>Maximum Volunteers:</label>
-                                                    <input type="number" name="max_volunteers" value="<?= $project['max_volunteers'] ?>" min="1">
+                                                    <input type="number" name="capacity" value="<?= $project['capacity'] ?? '' ?>" min="1">
                                                 </div>
 
                                                 <div class="form-group">
                                                     <label>Required Skills:</label>
-                                                    <input type="text" name="required_skills" value="<?= htmlspecialchars($project['required_skills'] ?? '') ?>">
+                                                    <input type="text" name="skills_needed" value="<?= htmlspecialchars($project['skills_needed'] ?? '') ?>">
+                                                </div>
+
+                                                <div class="form-group">
+                                                    <label>Priority:</label>
+                                                    <select name="priority">
+                                                        <option value="low" <?= ($project['priority'] ?? '') === 'low' ? 'selected' : '' ?>>Low</option>
+                                                        <option value="medium" <?= ($project['priority'] ?? 'medium') === 'medium' ? 'selected' : '' ?>>Medium</option>
+                                                        <option value="high" <?= ($project['priority'] ?? '') === 'high' ? 'selected' : '' ?>>High</option>
+                                                    </select>
                                                 </div>
 
                                                 <div class="form-group full-width">
                                                     <label>Description:</label>
                                                     <textarea name="description" rows="3"><?= htmlspecialchars($project['description'] ?? '') ?></textarea>
+                                                </div>
+
+                                                <div class="form-group full-width">
+                                                    <label>Requirements:</label>
+                                                    <textarea name="requirements" rows="3"><?= htmlspecialchars($project['requirements'] ?? '') ?></textarea>
                                                 </div>
                                             </div>
 
@@ -575,9 +638,7 @@ include 'includes/header.php';
                                                 <button type="submit" class="btn-primary">
                                                     <i class="fas fa-save"></i> Save Changes
                                                 </button>
-                                                <button type="button" onclick="toggleEdit('project-<?= $project['project_id'] ?>')" class="btn-secondary">
-                                                    Cancel
-                                                </button>
+                                                <button type="button" onclick="toggleEdit('project-<?= $project['project_id'] ?>')" class="btn-secondary">Cancel</button>
                                             </div>
                                         </form>
                                     </div>
@@ -641,6 +702,18 @@ include 'includes/header.php';
     function toggleSection(sectionId) {
         const section = document.getElementById(sectionId);
         section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function confirmUpdate(itemType) {
+        return confirm(`Are you sure you want to update this ${itemType}?`);
+    }
+
+    function confirmDelete(itemType) {
+        return confirm(`Are you sure you want to delete this ${itemType}? This action cannot be undone.`);
+    }
+
+    function confirmCreate(itemType) {
+        return confirm(`Are you sure you want to create this ${itemType}?`);
     }
 
     // Auto-hide alerts after 5 seconds

@@ -10,12 +10,12 @@ $success = '';
 $error = '';
 
 // Get volunteer info with organization
-$user = getSingleRecord("
-    SELECT u.*, o.name as org_name, o.org_id
-    FROM users u
-    LEFT JOIN organizations o ON u.organization_id = o.org_id
-    WHERE u.user_id = ?
-", [$user_id]);
+$user_query = "SELECT u.*, o.name as org_name, o.org_id
+              FROM users u
+              LEFT JOIN organizations o ON u.organization_id = o.org_id
+              WHERE u.user_id = $user_id";
+$user_result = mysqli_query($connection, $user_query);
+$user = mysqli_fetch_assoc($user_result);
 
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
@@ -125,29 +125,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // Handle leave project
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'leave_project') {
-    if (($_POST['confirmed'] ?? 'false') !== 'true') {
-        die('Error: Action requires confirmation');
-    }
-    
     $project_id = (int)$_POST['project_id'];
-    try {
-        deleteRecord("DELETE FROM volunteer_projects WHERE volunteer_id = ? AND project_id = ?", [$user_id, $project_id]);
+    
+    // Delete from volunteer_projects table using simple mysqli query
+    $escaped_user_id = mysqli_real_escape_string($connection, $user_id);
+    $escaped_project_id = mysqli_real_escape_string($connection, $project_id);
+    
+    $sql = "DELETE FROM volunteer_projects WHERE volunteer_id = $escaped_user_id AND project_id = $escaped_project_id";
+    
+    if (mysqli_query($connection, $sql)) {
         $success = 'Successfully left the project.';
-    } catch (Exception $e) {
+    } else {
         $error = 'Failed to leave project. Please try again.';
     }
 }
 
 // Get joined projects with detailed information
-$joined_projects = getMultipleRecords("
-    SELECT p.*, o.name as org_name, vp.assigned_at, vp.status as volunteer_status,
-           (SELECT COUNT(*) FROM volunteer_projects vp2 WHERE vp2.project_id = p.project_id) as total_volunteers
-    FROM volunteer_projects vp
-    JOIN projects p ON vp.project_id = p.project_id
-    JOIN organizations o ON p.organization_id = o.org_id
-    WHERE vp.volunteer_id = ?
-    ORDER BY vp.assigned_at DESC
-", [$user_id]);
+$joined_projects_query = "SELECT p.*, o.name as org_name, vp.assigned_at, vp.status as volunteer_status,
+                         (SELECT COUNT(*) FROM volunteer_projects vp2 WHERE vp2.project_id = p.project_id) as total_volunteers
+                         FROM volunteer_projects vp
+                         JOIN projects p ON vp.project_id = p.project_id
+                         JOIN organizations o ON p.organization_id = o.org_id
+                         WHERE vp.volunteer_id = $user_id
+                         ORDER BY vp.assigned_at DESC";
+$joined_projects_result = mysqli_query($connection, $joined_projects_query);
+$joined_projects = [];
+while ($project = mysqli_fetch_assoc($joined_projects_result)) {
+    $joined_projects[] = $project;
+}
 
 // Get available organizations for joining
 $available_orgs = [];
@@ -530,12 +535,10 @@ function confirmProfileUpdate() {
                     <?php endif; ?>
                     
                     <div style="text-align: right; margin-top: 20px;">
-                        <form method="POST" class="form-inline" id="leaveProjectForm_<?php echo $project['project_id']; ?>">
+                        <form method="POST" class="form-inline" onsubmit="return confirm('Are you sure you want to leave this project? This action cannot be undone.')">
                             <input type="hidden" name="action" value="leave_project">
                             <input type="hidden" name="project_id" value="<?php echo $project['project_id']; ?>">
-                            <input type="hidden" name="confirmed" value="false">
-                            <button type="button" class="btn" style="background: #dc3545; color: white; padding: 8px 16px;" 
-                                    onclick="confirmAction('leave this project', document.getElementById('leaveProjectForm_<?php echo $project['project_id']; ?>'))">
+                            <button type="submit" class="btn" style="background: #dc3545; color: white; padding: 8px 16px;">
                                 ❌ Leave Project
                             </button>
                         </form>
