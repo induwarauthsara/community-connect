@@ -27,22 +27,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         try {
             // Check if already joined
-            $existing = getSingleRecord(
-                "SELECT * FROM volunteer_projects WHERE volunteer_id = ? AND project_id = ?",
-                [$user_id, $project_id]
-            );
+            $project_id_escaped = mysqli_real_escape_string($connection, $project_id);
+            $user_id_escaped = mysqli_real_escape_string($connection, $user_id);
+            
+            $check_query = "SELECT * FROM volunteer_projects WHERE volunteer_id = '$user_id_escaped' AND project_id = '$project_id_escaped'";
+            $existing_result = mysqli_query($connection, $check_query);
+            $existing = mysqli_fetch_assoc($existing_result);
             
             if ($existing) {
                 $error = 'You have already joined this project.';
             } else {
                 // Check project status and availability with detailed info
-                $project = getSingleRecord("
+                $project_query = "
                     SELECT p.*, o.name as org_name,
                            (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) as current_volunteers
                     FROM projects p 
                     JOIN organizations o ON p.organization_id = o.org_id
-                    WHERE p.project_id = ? AND p.status = 'approved'
-                ", [$project_id]);
+                    WHERE p.project_id = '$project_id_escaped' AND p.status = 'approved'
+                ";
+                $project_result = mysqli_query($connection, $project_query);
+                $project = mysqli_fetch_assoc($project_result);
                 
                 if (!$project) {
                     $error = 'This project is not available for joining.';
@@ -52,22 +56,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     $error = 'This project has already ended.';
                 } else {
                     // Check organization constraint
-                    $user = getSingleRecord("SELECT organization_id FROM users WHERE user_id = ?", [$user_id]);
+                    $user_query = "SELECT organization_id FROM users WHERE user_id = '$user_id_escaped'";
+                    $user_result = mysqli_query($connection, $user_query);
+                    $user = mysqli_fetch_assoc($user_result);
+                    
                     if ($user && $user['organization_id'] && (int)$user['organization_id'] !== (int)$project['organization_id']) {
                         $error = 'You can only join projects from your current organization (' . htmlspecialchars($project['org_name']) . '). Leave your current organization first to join projects from other organizations.';
                     } else {
                         // Join the project
-                        insertRecord(
-                            "INSERT INTO volunteer_projects (volunteer_id, project_id, status) VALUES (?, ?, 'registered')",
-                            [$user_id, $project_id]
-                        );
+                        $insert_query = "INSERT INTO volunteer_projects (volunteer_id, project_id, status) VALUES ('$user_id_escaped', '$project_id_escaped', 'registered')";
+                        mysqli_query($connection, $insert_query);
                         
                         // Set organization if not set
                         if (!$user['organization_id']) {
-                            updateRecord(
-                                "UPDATE users SET organization_id = ? WHERE user_id = ?",
-                                [$project['organization_id'], $user_id]
-                            );
+                            $org_id_escaped = mysqli_real_escape_string($connection, $project['organization_id']);
+                            $update_query = "UPDATE users SET organization_id = '$org_id_escaped' WHERE user_id = '$user_id_escaped'";
+                            mysqli_query($connection, $update_query);
                         }
                         
                         $success = 'Successfully joined "' . htmlspecialchars($project['title']) . '"! You are now part of ' . htmlspecialchars($project['org_name']) . '.';
@@ -87,7 +91,7 @@ $filter_skills = $_GET['skills'] ?? '';
 $sort_by = $_GET['sort'] ?? 'newest';
 $show_full = isset($_GET['show_full']) && $_GET['show_full'] === '1';
 
-// Build query for approved projects
+// Build query for approved projects with escaped parameters
 $sql = "
     SELECT p.*, o.name as org_name, o.contact_email,
            (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) as volunteer_count
@@ -96,25 +100,22 @@ $sql = "
     WHERE p.status = 'approved'
 ";
 
-$params = [];
-
 // Filter by organization
 if ($filter_org) {
-    $sql .= " AND o.name LIKE ?";
-    $params[] = '%' . $filter_org . '%';
+    $filter_org_escaped = mysqli_real_escape_string($connection, $filter_org);
+    $sql .= " AND o.name LIKE '%$filter_org_escaped%'";
 }
 
 // Filter by location
 if ($filter_location) {
-    $sql .= " AND p.location LIKE ?";
-    $params[] = '%' . $filter_location . '%';
+    $filter_location_escaped = mysqli_real_escape_string($connection, $filter_location);
+    $sql .= " AND p.location LIKE '%$filter_location_escaped%'";
 }
 
 // Filter by skills (search in description)
 if ($filter_skills) {
-    $sql .= " AND (p.description LIKE ? OR p.title LIKE ?)";
-    $params[] = '%' . $filter_skills . '%';
-    $params[] = '%' . $filter_skills . '%';
+    $filter_skills_escaped = mysqli_real_escape_string($connection, $filter_skills);
+    $sql .= " AND (p.description LIKE '%$filter_skills_escaped%' OR p.title LIKE '%$filter_skills_escaped%')";
 }
 
 // Filter out full projects unless specifically requested
@@ -127,10 +128,10 @@ $sql .= " AND (p.end_date IS NULL OR p.end_date >= CURDATE())";
 
 // Filter out already joined projects for volunteers
 if ($user_id && $user_role === 'volunteer') {
+    $user_id_escaped = mysqli_real_escape_string($connection, $user_id);
     $sql .= " AND p.project_id NOT IN (
-        SELECT project_id FROM volunteer_projects WHERE volunteer_id = ?
+        SELECT project_id FROM volunteer_projects WHERE volunteer_id = '$user_id_escaped'
     )";
-    $params[] = $user_id;
 }
 
 // Add sorting
@@ -155,24 +156,45 @@ switch ($sort_by) {
         break;
 }
 
-$projects = getMultipleRecords($sql, $params);
+// Execute the query to get projects
+$result = mysqli_query($connection, $sql);
+$projects = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $projects[] = $row;
+    }
+}
 
 // Get available organizations for filter
-$organizations = getMultipleRecords("
+$org_query = "
     SELECT DISTINCT o.name 
     FROM organizations o 
     JOIN projects p ON o.org_id = p.organization_id 
     WHERE p.status = 'approved' 
     ORDER BY o.name
-");
+";
+$org_result = mysqli_query($connection, $org_query);
+$organizations = [];
+if ($org_result) {
+    while ($row = mysqli_fetch_assoc($org_result)) {
+        $organizations[] = $row;
+    }
+}
 
 // Get available locations for filter
-$locations = getMultipleRecords("
+$loc_query = "
     SELECT DISTINCT p.location 
     FROM projects p 
     WHERE p.status = 'approved' AND p.location IS NOT NULL AND p.location != ''
     ORDER BY p.location
-");
+";
+$loc_result = mysqli_query($connection, $loc_query);
+$locations = [];
+if ($loc_result) {
+    while ($row = mysqli_fetch_assoc($loc_result)) {
+        $locations[] = $row;
+    }
+}
 
 // Get common skills from project descriptions for filter suggestions
 $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming', 'First Aid', 
@@ -181,13 +203,106 @@ $common_skills = ['Teaching', 'Event Management', 'Social Media', 'Programming',
 
 $page_title = 'Browse Projects - Community Connect';
 include 'includes/header.php';
+?>
 
-if ($success): ?>
-    <div class="success"><?php echo $success; ?></div>
+<?php if ($success): ?>
+    <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
+                color: #155724; 
+                padding: 20px 25px; 
+                border-radius: 12px; 
+                margin: 20px 0; 
+                border-left: 5px solid #28a745; 
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.15);
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                position: relative;
+                overflow: hidden;">
+        <!-- Success Icon -->
+        <div style="background: #28a745; 
+                    color: white; 
+                    width: 45px; 
+                    height: 45px; 
+                    border-radius: 50%; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    font-size: 20px; 
+                    font-weight: bold;
+                    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+                    flex-shrink: 0;">
+            ✓
+        </div>
+        
+        <!-- Success Message -->
+        <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">
+                Success!
+            </div>
+            <div style="font-size: 14px; line-height: 1.5;">
+                <?php echo $success; ?>
+            </div>
+        </div>
+        
+        <!-- Background Pattern -->
+        <div style="position: absolute; 
+                    top: -20px; 
+                    right: -20px; 
+                    width: 80px; 
+                    height: 80px; 
+                    background: radial-gradient(circle, rgba(40, 167, 69, 0.1) 0%, transparent 70%); 
+                    border-radius: 50%;"></div>
+    </div>
 <?php endif; ?>
 
 <?php if ($error): ?>
-    <div class="error"><?php echo htmlspecialchars($error); ?></div>
+    <div style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); 
+                color: #721c24; 
+                padding: 20px 25px; 
+                border-radius: 12px; 
+                margin: 20px 0; 
+                border-left: 5px solid #dc3545; 
+                box-shadow: 0 4px 15px rgba(220, 53, 69, 0.15);
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                position: relative;
+                overflow: hidden;">
+        <!-- Error Icon -->
+        <div style="background: #dc3545; 
+                    color: white; 
+                    width: 45px; 
+                    height: 45px; 
+                    border-radius: 50%; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    font-size: 20px; 
+                    font-weight: bold;
+                    box-shadow: 0 2px 10px rgba(220, 53, 69, 0.3);
+                    flex-shrink: 0;">
+            ✕
+        </div>
+        
+        <!-- Error Message -->
+        <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">
+                Error
+            </div>
+            <div style="font-size: 14px; line-height: 1.5;">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+        </div>
+        
+        <!-- Background Pattern -->
+        <div style="position: absolute; 
+                    top: -20px; 
+                    right: -20px; 
+                    width: 80px; 
+                    height: 80px; 
+                    background: radial-gradient(circle, rgba(220, 53, 69, 0.1) 0%, transparent 70%); 
+                    border-radius: 50%;"></div>
+    </div>
 <?php endif; ?>
 
 <div class="card">
@@ -498,5 +613,203 @@ if ($success): ?>
         </div>
     </div>
 <?php endif; ?>
+
+<script>
+function confirmJoin(form) {
+    const projectCard = form.closest('.project-card');
+    const projectTitle = projectCard.querySelector('h3').textContent;
+    
+    // Extract organization name from the header
+    const orgElement = projectCard.querySelector('div[style*="display: flex"] span');
+    const orgName = orgElement ? orgElement.textContent.replace('🏢 ', '') : 'this organization';
+    
+    const confirmed = confirm(
+        `Are you sure you want to join "${projectTitle}"?\n\n` +
+        `This will make you a member of ${orgName} and you'll be able to participate in this volunteer project.\n\n` +
+        `Click OK to confirm or Cancel to go back.`
+    );
+    
+    if (confirmed) {
+        form.querySelector('input[name="confirmed"]').value = 'true';
+        return true;
+    }
+    return false;
+}
+
+// Enhanced search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change (optional)
+    const filterForm = document.querySelector('form[method="GET"]');
+    if (filterForm) {
+        const autoSubmitElements = filterForm.querySelectorAll('select[name="organization"], select[name="location"], select[name="sort"]');
+        autoSubmitElements.forEach(element => {
+            element.addEventListener('change', function() {
+                // Optional: Add a small delay for better UX
+                setTimeout(() => {
+                    filterForm.submit();
+                }, 100);
+            });
+        });
+    }
+    
+    // Add loading state to join buttons
+    const joinForms = document.querySelectorAll('form[onsubmit*="confirmJoin"]');
+    joinForms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const button = form.querySelector('button[type="submit"]');
+            if (button) {
+                button.innerHTML = '⏳ Joining...';
+                button.disabled = true;
+            }
+        });
+    });
+    
+    // Enhanced project cards hover effects
+    const projectCards = document.querySelectorAll('.project-card');
+    projectCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,123,255,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 8px 32px rgba(0,123,255,0.1)';
+        });
+    });
+});
+</script>
+
+<style>
+/* Enhanced Project Card Styles */
+.project-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+.project-card:hover {
+    border-left-color: #0056b3;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.info-item {
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.info-item strong {
+    color: #495057;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 10px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Filter Form Enhancements */
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group select,
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-group select:focus,
+.form-group input[type="text"]:focus {
+    border-color: #007bff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button Enhancements */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: 6px;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838, #1aa085);
+}
+
+/* Responsive Design Improvements */
+@media (max-width: 768px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .project-card {
+        margin-bottom: 20px;
+    }
+}
+
+/* Loading States */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Success/Error Message Enhancements */
+.success, .error {
+    border-radius: 8px;
+    font-weight: 500;
+}
+</style>
 
 <?php include 'includes/footer.php'; ?>

@@ -99,26 +99,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // Handle leave organization
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'leave_organization') {
-    if (($_POST['confirmed'] ?? 'false') !== 'true') {
-        die('Error: Action requires confirmation');
-    }
+    // Remove from all projects first
+    $escaped_user_id = mysqli_real_escape_string($connection, $user_id);
     
-    try {
-        // Remove from all projects first
-        deleteRecord("DELETE FROM volunteer_projects WHERE volunteer_id = ?", [$user_id]);
-        
-        // Remove organization association
-        updateRecord("UPDATE users SET organization_id = NULL WHERE user_id = ?", [$user_id]);
-        
+    $sql1 = "DELETE FROM volunteer_projects WHERE volunteer_id = $escaped_user_id";
+    $sql2 = "UPDATE users SET organization_id = NULL WHERE user_id = $escaped_user_id";
+    
+    if (mysqli_query($connection, $sql1) && mysqli_query($connection, $sql2)) {
         $success = 'Successfully left organization and all associated projects.';
         // Refresh user data
-        $user = getSingleRecord("
-            SELECT u.*, o.name as org_name, o.org_id
-            FROM users u
-            LEFT JOIN organizations o ON u.organization_id = o.org_id
-            WHERE u.user_id = ?
-        ", [$user_id]);
-    } catch (Exception $e) {
+        $user_query = "SELECT u.*, o.name as org_name, o.org_id
+                      FROM users u
+                      LEFT JOIN organizations o ON u.organization_id = o.org_id
+                      WHERE u.user_id = $user_id";
+        $user_result = mysqli_query($connection, $user_query);
+        $user = mysqli_fetch_assoc($user_result);
+    } else {
         $error = 'Failed to leave organization. Please try again.';
     }
 }
@@ -342,11 +338,9 @@ function confirmProfileUpdate() {
             <div class="meta-value">
                 <?php if ($user['org_name']): ?>
                     <?php echo htmlspecialchars($user['org_name']); ?>
-                    <form method="POST" style="display: inline; margin-left: 10px;" id="leaveOrgForm">
+                    <form method="POST" style="display: inline; margin-left: 10px;" onsubmit="return confirm('Are you sure you want to leave this organization and all associated projects? This action cannot be undone.')">
                         <input type="hidden" name="action" value="leave_organization">
-                        <input type="hidden" name="confirmed" value="false">
-                        <button type="button" class="btn btn-sm" style="background: #dc3545; color: white; font-size: 11px; padding: 4px 8px;" 
-                                onclick="confirmAction('leave this organization and all associated projects', document.getElementById('leaveOrgForm'))">Leave</button>
+                        <button type="submit" class="btn btn-sm" style="background: #dc3545; color: white; font-size: 11px; padding: 4px 8px;">Leave</button>
                     </form>
                 <?php else: ?>
                     <em style="color: #666;">Not associated with any organization</em>
@@ -485,66 +479,118 @@ function confirmProfileUpdate() {
         
         <?php if (!empty($active_projects)): ?>
             <div class="form-section">
-                <h4 style="color: #28a745; margin-bottom: 20px;">🔄 Active Projects (<?php echo count($active_projects); ?>)</h4>
-                <?php foreach ($active_projects as $project): ?>
-                <div class="project-card" style="border-left-color: #28a745;">
-                    <div class="project-header">
-                        <h4 class="project-title"><?php echo htmlspecialchars($project['title']); ?></h4>
-                        <?php echo getStatusBadge($project['status']); ?>
-                    </div>
-                    
-                    <div class="project-meta">
-                        <div class="meta-item">
-                            <span class="meta-label">🏢 Organization</span>
-                            <div class="meta-value"><?php echo htmlspecialchars($project['org_name']); ?></div>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">📅 You Joined</span>
-                            <div class="meta-value"><?php echo formatDate($project['assigned_at']); ?></div>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">👥 Team Size</span>
-                            <div class="meta-value"><?php echo (int)$project['total_volunteers']; ?> volunteers</div>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-label">⏰ Timeline</span>
-                            <div class="meta-value">
-                                <?php if ($project['start_date']): ?>
-                                    <?php echo formatDate($project['start_date']); ?>
-                                    <?php if ($project['end_date']): ?>
-                                        to <?php echo formatDate($project['end_date']); ?>
-                                    <?php else: ?>
-                                        (ongoing)
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    Flexible timing
-                                <?php endif; ?>
+                <h4 style="color: #28a745; margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
+                    <span style="background: linear-gradient(135deg, #28a745, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold;">🔄 Active Projects</span>
+                    <span style="background: #28a745; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: 600;"><?php echo count($active_projects); ?></span>
+                </h4>
+                
+                <div style="display: grid; gap: 20px;">
+                    <?php foreach ($active_projects as $project): ?>
+                    <div style="background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%); border: 1px solid #e3f2fd; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1); border-left: 5px solid #28a745; transition: all 0.3s ease; position: relative; overflow: hidden;">
+                        <!-- Decorative Background Pattern -->
+                        <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: radial-gradient(circle, rgba(40, 167, 69, 0.05) 0%, transparent 70%); border-radius: 50%;"></div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                            <div style="flex: 1;">
+                                <h4 style="color: #2c3e50; margin: 0 0 8px 0; font-size: 20px; font-weight: 600; line-height: 1.3;">
+                                    <?php echo htmlspecialchars($project['title']); ?>
+                                </h4>
+                                <div style="display: inline-block;">
+                                    <?php echo getStatusBadge($project['status']); ?>
+                                </div>
+                            </div>
+                            
+                            <!-- Project Actions -->
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    🚀 Active
+                                </span>
                             </div>
                         </div>
-                    </div>
-                    
-                    <?php if ($project['description']): ?>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
-                            <strong>About this project:</strong><br>
-                            <?php echo htmlspecialchars(truncateText($project['description'], 200)); ?>
+                        
+                        <!-- Enhanced Project Information Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div style="background: rgba(40, 167, 69, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(40, 167, 69, 0.1);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <span style="font-size: 16px;">🏢</span>
+                                    <span style="font-weight: 600; color: #495057; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Organization</span>
+                                </div>
+                                <div style="color: #2c3e50; font-weight: 500; font-size: 14px;"><?php echo htmlspecialchars($project['org_name']); ?></div>
+                            </div>
+                            
+                            <div style="background: rgba(52, 144, 220, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(52, 144, 220, 0.1);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <span style="font-size: 16px;">📅</span>
+                                    <span style="font-weight: 600; color: #495057; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">You Joined</span>
+                                </div>
+                                <div style="color: #2c3e50; font-weight: 500; font-size: 14px;"><?php echo formatDate($project['assigned_at']); ?></div>
+                            </div>
+                            
+                            <div style="background: rgba(255, 193, 7, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(255, 193, 7, 0.1);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <span style="font-size: 16px;">👥</span>
+                                    <span style="font-weight: 600; color: #495057; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Team Size</span>
+                                </div>
+                                <div style="color: #2c3e50; font-weight: 500; font-size: 14px;"><?php echo (int)$project['total_volunteers']; ?> volunteers</div>
+                            </div>
+                            
+                            <div style="background: rgba(220, 53, 69, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(220, 53, 69, 0.1);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                    <span style="font-size: 16px;">⏰</span>
+                                    <span style="font-weight: 600; color: #495057; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Timeline</span>
+                                </div>
+                                <div style="color: #2c3e50; font-weight: 500; font-size: 14px;">
+                                    <?php if ($project['start_date']): ?>
+                                        <?php echo formatDate($project['start_date']); ?>
+                                        <?php if ($project['end_date']): ?>
+                                            to <?php echo formatDate($project['end_date']); ?>
+                                        <?php else: ?>
+                                            (ongoing)
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        Flexible timing
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($project['location']): ?>
-                        <p><strong>📍 Location:</strong> <?php echo htmlspecialchars($project['location']); ?></p>
-                    <?php endif; ?>
-                    
-                    <div style="text-align: right; margin-top: 20px;">
-                        <form method="POST" class="form-inline" onsubmit="return confirm('Are you sure you want to leave this project? This action cannot be undone.')">
-                            <input type="hidden" name="action" value="leave_project">
-                            <input type="hidden" name="project_id" value="<?php echo $project['project_id']; ?>">
-                            <button type="submit" class="btn" style="background: #dc3545; color: white; padding: 8px 16px;">
-                                ❌ Leave Project
-                            </button>
-                        </form>
+                        
+                        <?php if ($project['description']): ?>
+                            <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #dee2e6; position: relative;">
+                                <div style="position: absolute; left: 20px; top: -8px; background: white; padding: 0 10px; color: #6c757d; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    About this project
+                                </div>
+                                <div style="color: #495057; line-height: 1.6; font-size: 14px; margin-top: 10px;">
+                                    <?php echo htmlspecialchars(truncateText($project['description'], 200)); ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <?php if ($project['location']): ?>
+                            <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0; padding: 12px; background: rgba(0, 123, 255, 0.05); border-radius: 8px; border-left: 3px solid #007bff;">
+                                <span style="font-size: 18px;">📍</span>
+                                <div>
+                                    <span style="font-weight: 600; color: #007bff; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Location</span>
+                                    <div style="color: #2c3e50; font-weight: 500; font-size: 14px;"><?php echo htmlspecialchars($project['location']); ?></div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                        
+                        <!-- Action Button -->
+                        <div style="text-align: right; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                            <form method="POST" class="form-inline" onsubmit="return confirm('Are you sure you want to leave this project? This action cannot be undone.')">
+                                <input type="hidden" name="action" value="leave_project">
+                                <input type="hidden" name="project_id" value="<?php echo $project['project_id']; ?>">
+                                <button type="submit" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(220, 53, 69, 0.3); display: flex; align-items: center; gap: 8px;" 
+                                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(220, 53, 69, 0.4)'" 
+                                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 10px rgba(220, 53, 69, 0.3)'">
+                                    <span>❌</span>
+                                    <span>Leave Project</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; ?>
             </div>
         <?php endif; ?>
         
