@@ -1,0 +1,181 @@
+-- =====================================================
+-- Community Connect Database Schema
+-- Generated from setup_database.php
+-- =====================================================
+
+-- Create database with UTF-8 support
+CREATE DATABASE IF NOT EXISTS `community_connect` 
+CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Use the database
+USE `community_connect`;
+
+-- =====================================================
+-- Table: organizations
+-- Created first since users table references it
+-- =====================================================
+CREATE TABLE IF NOT EXISTS organizations (
+    org_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    contact_email VARCHAR(100),
+    contact_phone VARCHAR(20),
+    website VARCHAR(255),
+    address TEXT,
+    mission TEXT,
+    established_year YEAR,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Table: users
+-- Multi-role user table with organization reference
+-- =====================================================
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'organization', 'volunteer') NOT NULL,
+    phone VARCHAR(20),
+    address TEXT,
+    skills TEXT,
+    availability TEXT,
+    birth_date DATE,
+    emergency_contact VARCHAR(100),
+    emergency_phone VARCHAR(20),
+    organization_id INT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    email_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- Indexes for performance
+    INDEX idx_username (username),
+    INDEX idx_email (email),
+    INDEX idx_role (role),
+    
+    -- Foreign key constraint
+    FOREIGN KEY (organization_id) REFERENCES organizations(org_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Add foreign key constraint to organizations table
+-- This is done after users table creation to avoid circular dependency
+-- =====================================================
+ALTER TABLE organizations 
+ADD CONSTRAINT fk_org_created_by 
+FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL;
+
+-- =====================================================
+-- Table: projects
+-- Stores both organization projects and guest submissions
+-- =====================================================
+CREATE TABLE IF NOT EXISTS projects (
+    project_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    location VARCHAR(200),
+    start_date DATE,
+    end_date DATE,
+    start_time TIME,
+    end_time TIME,
+    requirements TEXT,
+    skills_needed TEXT,
+    capacity INT DEFAULT 0,
+    current_volunteers INT DEFAULT 0,
+    created_by INT NULL,
+    organization_id INT,
+    status ENUM('pending','approved','active','completed','cancelled') DEFAULT 'pending',
+    priority ENUM('low','medium','high') DEFAULT 'medium',
+    image_url VARCHAR(255),
+    
+    -- Guest submission metadata (for non-logged users)
+    submitted_by_name VARCHAR(100) NULL,
+    submitted_by_email VARCHAR(100) NULL,
+    submitted_by_phone VARCHAR(20) NULL,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- Indexes for performance
+    INDEX idx_status (status),
+    INDEX idx_dates (start_date, end_date),
+    INDEX idx_organization (organization_id),
+    
+    -- Foreign key constraints
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (organization_id) REFERENCES organizations(org_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Table: volunteer_projects
+-- Junction table for volunteer-project assignments
+-- =====================================================
+CREATE TABLE IF NOT EXISTS volunteer_projects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    volunteer_id INT NOT NULL,
+    project_id INT NOT NULL,
+    status ENUM('registered','confirmed','completed','cancelled') DEFAULT 'registered',
+    notes TEXT,
+    hours_contributed DECIMAL(5,2) DEFAULT 0.00,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    
+    -- Unique constraint: one volunteer per project
+    UNIQUE KEY unique_volunteer_project (volunteer_id, project_id),
+    
+    -- Indexes for performance
+    INDEX idx_volunteer (volunteer_id),
+    INDEX idx_project (project_id),
+    INDEX idx_status (status),
+    
+    -- Foreign key constraints
+    FOREIGN KEY (volunteer_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Default Data: Create default admin user
+-- =====================================================
+INSERT INTO users (
+    name, 
+    username, 
+    email, 
+    password, 
+    role, 
+    is_active, 
+    email_verified
+) VALUES (
+    'System Administrator',
+    'ucsc',
+    'admin@communityconnect.com',
+    'ucsc',
+    'admin',
+    TRUE,
+    TRUE
+) ON DUPLICATE KEY UPDATE 
+    name = VALUES(name),
+    email = VALUES(email),
+    password = VALUES(password),
+    role = VALUES(role),
+    is_active = VALUES(is_active),
+    email_verified = VALUES(email_verified);
+
+-- =====================================================
+-- Summary of Database Schema
+-- =====================================================
+-- Tables created:
+-- 1. organizations - Organization information
+-- 2. users - Multi-role user accounts (admin, organization, volunteer)
+-- 3. projects - Project listings (including guest submissions)
+-- 4. volunteer_projects - Volunteer assignments to projects
+--
+-- Default admin credentials:
+-- Username: ucsc
+-- Email: admin@communityconnect.com
+-- Password: ucsc (plain text - development only)
+-- =====================================================
