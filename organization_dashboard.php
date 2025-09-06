@@ -12,11 +12,14 @@ $success_message = '';
 
 $user_id = $_SESSION['user_id'];
 
-// Get organization data
-$organization_query = "SELECT * FROM organizations WHERE created_by = $user_id";
+// Get organization data - check both created_by and organization_id
+$organization_query = "SELECT * FROM organizations WHERE created_by = $user_id OR org_id = (SELECT organization_id FROM users WHERE user_id = $user_id)";
 $organization_result = mysqli_query($connection, $organization_query);
 $organization = mysqli_fetch_assoc($organization_result);
 $org_id = $organization ? (int)$organization['org_id'] : null;
+
+// If no organization exists, we need to create one
+$needs_organization_setup = !$organization;
 
 // Handle organization create
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_org') {
@@ -44,12 +47,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         if (mysqli_query($connection, $sql)) {
             $org_id = mysqli_insert_id($connection);
+            
+            // Update user's organization_id to link them to this organization
+            $update_user_sql = "UPDATE users SET organization_id = $org_id WHERE user_id = $user_id";
+            mysqli_query($connection, $update_user_sql);
+            
             $success_message = 'Organization created successfully! You can now start creating volunteer projects.';
+            $needs_organization_setup = false;
+            
             // Refresh organization data
             $organization_result = mysqli_query($connection, "SELECT * FROM organizations WHERE org_id = $org_id");
             $organization = mysqli_fetch_assoc($organization_result);
         } else {
-            $error_message = 'Failed to create organization. Please try again.';
+            $error_message = 'Failed to create organization: ' . mysqli_error($connection);
         }
     }
 }
@@ -80,11 +90,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         if (mysqli_query($connection, $sql)) {
             $success_message = 'Organization information updated successfully!';
+            $needs_organization_setup = false;
+            
             // Refresh organization data
             $organization_result = mysqli_query($connection, "SELECT * FROM organizations WHERE org_id = $org_id");
             $organization = mysqli_fetch_assoc($organization_result);
         } else {
-            $error_message = 'Failed to update organization. Please try again.';
+            $error_message = 'Failed to update organization: ' . mysqli_error($connection);
         }
     }
 }
@@ -105,22 +117,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     
     if (empty($title)) {
         $error_message = 'Project title is required.';
+    } elseif (!$org_id) {
+        $error_message = 'Please complete your organization setup before creating projects.';
     } else {
         $start_date_value = !empty($start_date) ? "'$start_date'" : 'NULL';
         $end_date_value = !empty($end_date) ? "'$end_date'" : 'NULL';
         $start_time_value = !empty($start_time) ? "'$start_time'" : 'NULL';
         $end_time_value = !empty($end_time) ? "'$end_time'" : 'NULL';
         $capacity_value = $capacity ? $capacity : 'NULL';
-        $org_value = $org_id ? $org_id : 'NULL';
         
         $sql = "INSERT INTO projects (title, description, location, start_date, end_date, start_time, end_time, 
                 capacity, skills_needed, requirements, priority, organization_id, created_by, status) 
                 VALUES ('$title', '$description', '$location', $start_date_value, $end_date_value, 
                 $start_time_value, $end_time_value, $capacity_value, '$skills_needed', '$requirements', 
-                '$priority', $org_value, {$current_user['user_id']}, 'pending')";
+                '$priority', $org_id, {$current_user['user_id']}, 'approved')";
         
         if (mysqli_query($connection, $sql)) {
-            $success_message = 'Project created successfully! It will be visible to volunteers after admin approval.';
+            $success_message = 'Project created successfully! It is now visible to volunteers.';
         } else {
             $error_message = 'Error creating project: ' . mysqli_error($connection);
         }
@@ -221,10 +234,6 @@ include 'includes/header.php';
     <div class="dashboard-header">
         <div class="header-content">
             <h1><i class="fas fa-building"></i> Organization Dashboard</h1>
-            <div class="header-actions">
-                <span class="user-info">Welcome, <strong><?= htmlspecialchars($current_user['name']) ?></strong></span>
-                <a href="logout.php" class="btn-logout">Logout</a>
-            </div>
         </div>
     </div>
 
@@ -241,6 +250,74 @@ include 'includes/header.php';
             <?= htmlspecialchars($success_message) ?>
         </div>
     <?php endif; ?>
+
+    <?php if ($needs_organization_setup): ?>
+        <!-- Organization Setup Required -->
+        <div class="card setup-required">
+            <div class="card-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Organization Setup Required</h2>
+            </div>
+            <div class="card-content">
+                <div class="setup-message">
+                    <p><strong>Welcome to Community Connect!</strong></p>
+                    <p>To start creating volunteer projects, you need to set up your organization profile first. This information will be visible to volunteers when they browse your projects.</p>
+                </div>
+                
+                <form method="POST" onsubmit="return confirmCreate('organization')">
+                    <input type="hidden" name="action" value="create_org">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="setup_name">Organization Name *:</label>
+                            <input type="text" id="setup_name" name="name" required placeholder="Enter your organization name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="setup_contact_email">Contact Email:</label>
+                            <input type="email" id="setup_contact_email" name="contact_email" value="<?= htmlspecialchars($current_user['email']) ?>" placeholder="Contact email for volunteers">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="setup_contact_phone">Contact Phone:</label>
+                            <input type="tel" id="setup_contact_phone" name="contact_phone" placeholder="Phone number for contact">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="setup_website">Website:</label>
+                            <input type="url" id="setup_website" name="website" placeholder="https://yourorganization.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="setup_established_year">Established Year:</label>
+                            <input type="number" id="setup_established_year" name="established_year"
+                                min="1800" max="<?= date('Y') ?>" placeholder="<?= date('Y') ?>">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="setup_description">Description:</label>
+                            <textarea id="setup_description" name="description" rows="3" placeholder="Brief description of your organization..."></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="setup_address">Address:</label>
+                            <textarea id="setup_address" name="address" rows="2" placeholder="Organization address..."></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="setup_mission">Mission Statement:</label>
+                            <textarea id="setup_mission" name="mission" rows="3" placeholder="Your organization's mission and goals..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary btn-large">
+                            <i class="fas fa-rocket"></i> Complete Organization Setup
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php else: ?>
 
     <div class="dashboard-grid">
         <!-- Organization Information Card -->
@@ -683,6 +760,8 @@ include 'includes/header.php';
             </div>
         </div>
     <?php endif; ?>
+    
+    <?php endif; // End of organization setup check ?>
 </div>
 
 <script>
