@@ -562,13 +562,13 @@ include 'includes/header.php';
                                     <div class="project-actions">
                                         <?= getStatusBadge($project['status']) ?>
                                         <button type="button" onclick="toggleEdit('project-<?= $project['project_id'] ?>')" class="btn-icon" title="Edit Project">
-                                            <i class="fas fa-edit"></i>
+                                            Edit
                                         </button>
                                         <form method="POST" style="display: inline;" onsubmit="return confirmDelete('project')">
-                                            <input type="hidden" name="action" value="delete_project">
-                                            <input type="hidden" name="project_id" value="<?= $project['project_id'] ?>">
+                                            <input type="hidden" name="action" value="delete_project"> 
+                                            <input type="hidden" name="project_id" value="<?= $project['project_id'] ?>"> 
                                             <button type="submit" class="btn-icon btn-danger" title="Delete Project">
-                                                <i class="fas fa-trash"></i>
+                                                Delete
                                             </button>
                                         </form>
                                     </div>

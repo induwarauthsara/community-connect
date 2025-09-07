@@ -4,10 +4,6 @@
 $host = 'localhost';
 $username = 'root';   // Change this to your MySQL username
 $password = '';       // Change this to your MySQL password
-// Database configuration
-$host = 'localhost';
-$username = 'root';   // Change this to your MySQL username
-$password = '';       // Change this to your MySQL password
 $database = 'community_connect';
 
 // 1) Connect to MySQL server (without choosing a database)

@@ -83,42 +83,6 @@ function getMultipleRecords($query, $params = []) {
     return $records;
 }
 
-// Get single record from database
-function getSingleRecord($query, $params = []) {
-    $records = getMultipleRecords($query, $params);
-    return !empty($records) ? $records[0] : null;
-}
-
-// Insert record into database
-function insertRecord($query, $params = []) {
-    global $connection;
-    
-    if (empty($params)) {
-        return mysqli_query($connection, $query);
-    } else {
-        foreach ($params as $param) {
-            $escaped_param = mysqli_real_escape_string($connection, $param);
-            $query = preg_replace('/\?/', "'$escaped_param'", $query, 1);
-        }
-        return mysqli_query($connection, $query);
-    }
-}
-
-// Update record in database
-function updateRecord($query, $params = []) {
-    return insertRecord($query, $params); // Same logic
-}
-
-// Generate registration code
-function generateRegistrationCode($length = 8) {
-    $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    $code = '';
-    for ($i = 0; $i < $length; $i++) {
-        $code .= $chars[rand(0, strlen($chars) - 1)];
-    }
-    return $code;
-}
-
 // Format date for display
 function formatDate($date) {
     if (!$date) return 'Not specified';
@@ -144,49 +108,6 @@ function getStatusBadge($status) {
     ];
     
     return $badges[$status] ?? '<span class="status-badge" style="background: #6c757d; color: white;">' . htmlspecialchars(ucfirst($status)) . '</span>';
-}
-
-// Delete record from database
-function deleteRecord($query, $params = []) {
-    return insertRecord($query, $params); // Same logic as insert/update
-}
-
-// Validate required fields
-function validateRequiredFields($fields) {
-    $missing = [];
-    foreach ($fields as $field_name => $value) {
-        if (empty(trim($value))) {
-            $missing[] = ucwords(str_replace('_', ' ', $field_name));
-        }
-    }
-    return $missing;
-}
-
-// Validate email format
-function isValidEmail($email) {
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-}
-
-// Validate date format
-function isValidDate($date, $format = 'Y-m-d') {
-    $d = DateTime::createFromFormat($format, $date);
-    return $d && $d->format($format) === $date;
-}
-
-// Validate date range (end date must be after start date)
-function isValidDateRange($start_date, $end_date) {
-    // If either date is empty, the range is considered valid
-    if (empty($start_date) || empty($end_date)) {
-        return true;
-    }
-    
-    // Both dates must be valid
-    if (!isValidDate($start_date) || !isValidDate($end_date)) {
-        return false;
-    }
-    
-    // End date must be after or equal to start date
-    return strtotime($end_date) >= strtotime($start_date);
 }
 
 ?>
