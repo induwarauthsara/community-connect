@@ -1,2 +1,4 @@
 playwright-tests/*
 .playwright-mcp/*
+*.md
+.playwright-mcp/*

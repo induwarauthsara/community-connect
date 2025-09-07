@@ -207,7 +207,55 @@ function createStructure($host, $username, $password, $database, $tables) {
         echo "Admin user already exists.<br>";
     }
 
-    // Step F: Summary
+    // Step E: Create default organization user
+    echo "<br><h2>Default Organization User</h2>";
+    $check_org_sql = "SELECT COUNT(*) as count FROM users WHERE username = 'orguser'";
+    $result = mysqli_query($connection, $check_org_sql);
+    $row = $result ? mysqli_fetch_assoc($result) : ['count' => 0];
+    $org_count = (int)($row['count'] ?? 0);
+    if ($result) { mysqli_free_result($result); }
+
+    if ($org_count == 0) {
+        $org_password = 'orgpass';
+        $insert_org_sql = "INSERT INTO users (name, username, email, password, role, is_active, email_verified) 
+                           VALUES ('Sample Organization User', 'orguser', 'org@communityconnect.com', '$org_password', 'organization', TRUE, TRUE)";
+        if (mysqli_query($connection, $insert_org_sql)) {
+            echo "Organization user created.<br>";
+            echo "Username: orguser<br>";
+            echo "Email: org@communityconnect.com<br>";
+            echo "Password: orgpass<br>";
+        } else {
+            echo "Error creating organization user: " . mysqli_error($connection) . "<br>";
+        }
+    } else {
+        echo "Organization user already exists.<br>";
+    }
+
+    // Step F: Create default volunteer user
+    echo "<br><h2>Default Volunteer User</h2>";
+    $check_vol_sql = "SELECT COUNT(*) as count FROM users WHERE username = 'user'";
+    $result = mysqli_query($connection, $check_vol_sql);
+    $row = $result ? mysqli_fetch_assoc($result) : ['count' => 0];
+    $vol_count = (int)($row['count'] ?? 0);
+    if ($result) { mysqli_free_result($result); }
+
+    if ($vol_count == 0) {
+        $vol_password = 'user';
+        $insert_vol_sql = "INSERT INTO users (name, username, email, password, role, is_active, email_verified) 
+                           VALUES ('Sample Volunteer User', 'user', 'volunteer@communityconnect.com', '$vol_password', 'volunteer', TRUE, TRUE)";
+        if (mysqli_query($connection, $insert_vol_sql)) {
+            echo "Volunteer user created.<br>";
+            echo "Username: user<br>";
+            echo "Email: volunteer@communityconnect.com<br>";
+            echo "Password: user<br>";
+        } else {
+            echo "Error creating volunteer user: " . mysqli_error($connection) . "<br>";
+        }
+    } else {
+        echo "Volunteer user already exists.<br>";
+    }
+
+    // Step G: Summary
     echo "<br><hr>";
     echo "<h2>Summary</h2>";
     echo "Database: " . htmlspecialchars($database) . "<br>";
