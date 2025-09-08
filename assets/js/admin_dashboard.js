@@ -443,6 +443,7 @@ window.onclick = function (event) {
     const orgModal = document.getElementById('edit-org-modal');
     const projectModal = document.getElementById('project-details-modal');
     const assignmentModal = document.getElementById('assignment-details-modal');
+    const editProjectModal = document.getElementById('edit-project-modal');
 
     if (event.target === userModal) {
         closeEditUserModal();
@@ -456,6 +457,32 @@ window.onclick = function (event) {
     if (event.target === assignmentModal) {
         closeAssignmentDetailsModal();
     }
+    if (event.target === editProjectModal) {
+        closeEditProjectModal();
+    }
+}
+
+// Edit project functions
+function editProject(project) {
+    document.getElementById('edit-project-id').value = project.project_id;
+    document.getElementById('edit-project-title').value = project.title || '';
+    document.getElementById('edit-project-location').value = project.location || '';
+    document.getElementById('edit-project-start-date').value = project.start_date || '';
+    document.getElementById('edit-project-end-date').value = project.end_date || '';
+    document.getElementById('edit-project-start-time').value = project.start_time || '';
+    document.getElementById('edit-project-end-time').value = project.end_time || '';
+    document.getElementById('edit-project-capacity').value = project.capacity || '';
+    document.getElementById('edit-project-priority').value = project.priority || 'medium';
+    document.getElementById('edit-project-organization-id').value = project.organization_id || '';
+    document.getElementById('edit-project-skills-needed').value = project.skills_needed || '';
+    document.getElementById('edit-project-requirements').value = project.requirements || '';
+    document.getElementById('edit-project-description').value = project.description || '';
+    
+    document.getElementById('edit-project-modal').style.display = 'block';
+}
+
+function closeEditProjectModal() {
+    document.getElementById('edit-project-modal').style.display = 'none';
 }
 
 // Load statistics on page load

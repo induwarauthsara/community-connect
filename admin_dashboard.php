@@ -322,6 +322,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
             
+        case 'update_project':
+            $project_id = (int)$_POST['project_id'];
+            $title = mysqli_real_escape_string($connection, trim($_POST['title'] ?? ''));
+            $description = mysqli_real_escape_string($connection, trim($_POST['description'] ?? ''));
+            $location = mysqli_real_escape_string($connection, trim($_POST['location'] ?? ''));
+            $start_date = trim($_POST['start_date'] ?? '');
+            $end_date = trim($_POST['end_date'] ?? '');
+            $start_time = trim($_POST['start_time'] ?? '');
+            $end_time = trim($_POST['end_time'] ?? '');
+            $capacity = !empty($_POST['capacity']) ? (int)$_POST['capacity'] : null;
+            $skills_needed = mysqli_real_escape_string($connection, trim($_POST['skills_needed'] ?? ''));
+            $requirements = mysqli_real_escape_string($connection, trim($_POST['requirements'] ?? ''));
+            $priority = mysqli_real_escape_string($connection, trim($_POST['priority'] ?? 'medium'));
+            $organization_id = !empty($_POST['organization_id']) ? (int)$_POST['organization_id'] : null;
+            
+            if (empty($title)) {
+                $error_message = 'Project title is required.';
+            } else {
+                $start_date_value = !empty($start_date) ? "'$start_date'" : 'NULL';
+                $end_date_value = !empty($end_date) ? "'$end_date'" : 'NULL';
+                $start_time_value = !empty($start_time) ? "'$start_time'" : 'NULL';
+                $end_time_value = !empty($end_time) ? "'$end_time'" : 'NULL';
+                $capacity_value = $capacity ? $capacity : 'NULL';
+                $org_value = $organization_id ? $organization_id : 'NULL';
+                
+                $sql = "UPDATE projects SET 
+                        title = '$title', 
+                        description = '$description', 
+                        location = '$location', 
+                        start_date = $start_date_value, 
+                        end_date = $end_date_value, 
+                        start_time = $start_time_value, 
+                        end_time = $end_time_value, 
+                        capacity = $capacity_value, 
+                        skills_needed = '$skills_needed', 
+                        requirements = '$requirements', 
+                        priority = '$priority', 
+                        organization_id = $org_value 
+                        WHERE project_id = $project_id";
+                
+                if (mysqli_query($connection, $sql)) {
+                    $success_message = 'Project updated successfully.';
+                } else {
+                    $error_message = 'Error updating project: ' . mysqli_error($connection);
+                }
+            }
+            break;
+            
         case 'create_project':
             $title = mysqli_real_escape_string($connection, trim($_POST['title'] ?? ''));
             $description = mysqli_real_escape_string($connection, trim($_POST['description'] ?? ''));
@@ -710,7 +758,8 @@ include 'includes/header.php';
                 </thead>
                 <tbody>
                     <?php
-                    $projects_query = "SELECT p.*, o.name as org_name 
+                    $projects_query = "SELECT p.*, o.name as org_name,
+                                      (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id AND vp.status = 'confirmed') as current_volunteers
                                       FROM projects p 
                                       LEFT JOIN organizations o ON p.organization_id = o.org_id 
                                       ORDER BY p.created_at DESC";
@@ -742,6 +791,7 @@ include 'includes/header.php';
                                 </form>
                             <?php endif; ?>
                             <button class="btn btn-small btn-secondary" onclick="viewProject(<?php echo $project['project_id']; ?>)">View</button>
+                            <button class="btn btn-small btn-secondary" onclick="editProject(<?php echo htmlspecialchars(json_encode($project)); ?>)">Edit</button>
                             <form method="POST" style="display: inline;" onsubmit="return confirmDelete()">
                                 <input type="hidden" name="action" value="delete_project">
                                 <input type="hidden" name="project_id" value="<?php echo $project['project_id']; ?>">
@@ -1006,6 +1056,84 @@ include 'includes/header.php';
         <div id="assignment-details-content">
             <div class="loading">Loading assignment details...</div>
         </div>
+    </div>
+</div>
+
+<!-- Edit Project Modal -->
+<div id="edit-project-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditProjectModal()">&times;</span>
+        <h3>Edit Project</h3>
+        <form id="edit-project-form" method="POST" onsubmit="return confirmUpdate()">
+            <input type="hidden" name="action" value="update_project">
+            <input type="hidden" name="project_id" id="edit-project-id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="edit-project-title">Title *</label>
+                    <input type="text" id="edit-project-title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-location">Location</label>
+                    <input type="text" id="edit-project-location" name="location">
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-start-date">Start Date</label>
+                    <input type="date" id="edit-project-start-date" name="start_date">
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-end-date">End Date</label>
+                    <input type="date" id="edit-project-end-date" name="end_date">
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-start-time">Start Time</label>
+                    <input type="time" id="edit-project-start-time" name="start_time">
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-end-time">End Time</label>
+                    <input type="time" id="edit-project-end-time" name="end_time">
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-capacity">Capacity</label>
+                    <input type="number" id="edit-project-capacity" name="capacity" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-priority">Priority</label>
+                    <select id="edit-project-priority" name="priority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-project-organization-id">Organization</label>
+                    <select id="edit-project-organization-id" name="organization_id">
+                        <option value="">None (Admin Project)</option>
+                        <?php
+                        $orgs = mysqli_query($connection, "SELECT org_id, name FROM organizations ORDER BY name");
+                        while ($org = mysqli_fetch_assoc($orgs)) {
+                            echo "<option value='{$org['org_id']}'>" . htmlspecialchars($org['name']) . "</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="edit-project-skills-needed">Skills Needed</label>
+                <textarea id="edit-project-skills-needed" name="skills_needed" rows="2" placeholder="e.g., Communication, Teamwork, Computer Skills"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-project-requirements">Requirements</label>
+                <textarea id="edit-project-requirements" name="requirements" rows="2" placeholder="Special requirements or qualifications"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="edit-project-description">Description</label>
+                <textarea id="edit-project-description" name="description" rows="4" placeholder="Describe the project goals, activities, and requirements..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Update Project</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditProjectModal()">Cancel</button>
+            </div>
+        </form>
     </div>
 </div>
 
