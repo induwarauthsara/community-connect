@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     SELECT p.*, o.name as org_name,
                            (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) as current_volunteers
                     FROM projects p 
-                    JOIN organizations o ON p.organization_id = o.org_id
+                    LEFT JOIN organizations o ON p.organization_id = o.org_id
                     WHERE p.project_id = '$project_id_escaped' AND p.status = 'approved'
                 ";
                 $project_result = mysqli_query($connection, $project_query);
@@ -60,21 +60,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     $user_result = mysqli_query($connection, $user_query);
                     $user = mysqli_fetch_assoc($user_result);
                     
-                    if ($user && $user['organization_id'] && (int)$user['organization_id'] !== (int)$project['organization_id']) {
+                    // If project has an organization and user has a different organization
+                    if ($project['organization_id'] && $user && $user['organization_id'] && (int)$user['organization_id'] !== (int)$project['organization_id']) {
                         $error = 'You can only join projects from your current organization (' . htmlspecialchars($project['org_name']) . '). Leave your current organization first to join projects from other organizations.';
                     } else {
                         // Join the project
                         $insert_query = "INSERT INTO volunteer_projects (volunteer_id, project_id, status) VALUES ('$user_id_escaped', '$project_id_escaped', 'registered')";
                         mysqli_query($connection, $insert_query);
                         
-                        // Set organization if not set
-                        if (!$user['organization_id']) {
+                        // Set organization if not set and project has an organization
+                        if (!$user['organization_id'] && $project['organization_id']) {
                             $org_id_escaped = mysqli_real_escape_string($connection, $project['organization_id']);
                             $update_query = "UPDATE users SET organization_id = '$org_id_escaped' WHERE user_id = '$user_id_escaped'";
                             mysqli_query($connection, $update_query);
                         }
                         
-                        $success = 'Successfully joined "' . htmlspecialchars($project['title']) . '"! You are now part of ' . htmlspecialchars($project['org_name']) . '.';
+                        // Success message depends on whether project has organization
+                        if ($project['organization_id']) {
+                            $success = 'Successfully joined "' . htmlspecialchars($project['title']) . '"! You are now part of ' . htmlspecialchars($project['org_name']) . '.';
+                        } else {
+                            $success = 'Successfully joined "' . htmlspecialchars($project['title']) . '"! This is an admin-managed project.';
+                        }
                     }
                 }
             }
@@ -96,7 +102,7 @@ $sql = "
     SELECT p.*, o.name as org_name, o.contact_email,
            (SELECT COUNT(*) FROM volunteer_projects vp WHERE vp.project_id = p.project_id) as volunteer_count
     FROM projects p
-    JOIN organizations o ON p.organization_id = o.org_id
+    LEFT JOIN organizations o ON p.organization_id = o.org_id
     WHERE p.status = 'approved'
 ";
 
@@ -460,7 +466,7 @@ include 'includes/header.php';
         <div style="margin-bottom: 15px; padding-right: 100px;">
             <h3 style="color: #007bff; margin-bottom: 5px;"><?php echo htmlspecialchars($project['title']); ?></h3>
             <div style="display: flex; align-items: center; gap: 15px; font-size: 14px; color: #666;">
-                <span>🏢 <strong><?php echo htmlspecialchars($project['org_name']); ?></strong></span>
+                <span>🏢 <strong><?php echo htmlspecialchars($project['org_name'] ?? 'Admin Project'); ?></strong></span>
                 <span>📅 Posted <?php echo formatDate($project['created_at']); ?></span>
             </div>
         </div>
@@ -551,9 +557,13 @@ include 'includes/header.php';
                                 </button>
                             </form>
                             
-                            <?php if (!isset($_SESSION['organization_id']) || !$_SESSION['organization_id']): ?>
+                            <?php if ((!isset($_SESSION['organization_id']) || !$_SESSION['organization_id']) && $project['organization_id']): ?>
                                 <p style="font-size: 12px; color: #666; margin: 5px 0;">
                                     💡 Joining will automatically add you to <strong><?php echo htmlspecialchars($project['org_name']); ?></strong>
+                                </p>
+                            <?php elseif ((!isset($_SESSION['organization_id']) || !$_SESSION['organization_id']) && !$project['organization_id']): ?>
+                                <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                                    💡 This is an admin-managed project - no organization membership required
                                 </p>
                             <?php endif; ?>
                         </div>
@@ -607,9 +617,9 @@ include 'includes/header.php';
         </div>
         
         <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 4px; font-size: 12px; color: #666;">
-            <strong>Important:</strong> When you join a project, you automatically become part of that organization. 
-            You can only be associated with one organization at a time. To switch organizations, 
-            you must leave your current organization first from your <a href="volunteer_dashboard.php">volunteer dashboard</a>.
+            <strong>Important:</strong> When you join an organization project, you automatically become part of that organization. 
+            You can only be associated with one organization at a time. Admin projects don't require organization membership.
+            To switch organizations, you must leave your current organization first from your <a href="volunteer_dashboard.php">volunteer dashboard</a>.
         </div>
     </div>
 <?php endif; ?>

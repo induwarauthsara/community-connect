@@ -141,7 +141,7 @@ $joined_projects_query = "SELECT p.*, o.name as org_name, vp.assigned_at, vp.sta
                          (SELECT COUNT(*) FROM volunteer_projects vp2 WHERE vp2.project_id = p.project_id) as total_volunteers
                          FROM volunteer_projects vp
                          JOIN projects p ON vp.project_id = p.project_id
-                         JOIN organizations o ON p.organization_id = o.org_id
+                         LEFT JOIN organizations o ON p.organization_id = o.org_id
                          WHERE vp.volunteer_id = $user_id
                          ORDER BY vp.assigned_at DESC";
 $joined_projects_result = mysqli_query($connection, $joined_projects_query);
@@ -515,7 +515,7 @@ function confirmProfileUpdate() {
                                     <span style="font-size: 16px;">🏢</span>
                                     <span style="font-weight: 600; color: #495057; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Organization</span>
                                 </div>
-                                <div style="color: #2c3e50; font-weight: 500; font-size: 14px;"><?php echo htmlspecialchars($project['org_name']); ?></div>
+                                <div style="color: #2c3e50; font-weight: 500; font-size: 14px;"><?php echo htmlspecialchars($project['org_name'] ?? 'Admin Project'); ?></div>
                             </div>
                             
                             <div style="background: rgba(52, 144, 220, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(52, 144, 220, 0.1);">
@@ -612,7 +612,7 @@ function confirmProfileUpdate() {
                     <div class="project-meta">
                         <div class="meta-item">
                             <span class="meta-label">🏢 Organization</span>
-                            <div class="meta-value"><?php echo htmlspecialchars($project['org_name']); ?></div>
+                            <div class="meta-value"><?php echo htmlspecialchars($project['org_name'] ?? 'Admin Project'); ?></div>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">📅 Duration</span>
